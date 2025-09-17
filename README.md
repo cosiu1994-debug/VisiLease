@@ -4,6 +4,13 @@ A **visual and intuitive lease management system** for commercial buildings.
 VisiLease helps property managers track contracts, units, and tenants with clear dashboards and real-time status.
 
 ---
+## 🌟 Highlights
+
+![Dashboard Screenshot](assets/screenshots/sample.png)  
+*Visual dashboard showing unit and contract status.*
+
+![Contract Editor Screenshot](assets/screenshots/sample2.png)  
+*Interactive contract editor and approval workflow also*
 
 ## ✨ Features
 - 📊 **Visual dashboards** – Manage units and contracts at a glance  
