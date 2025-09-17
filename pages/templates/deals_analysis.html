@@ -1,0 +1,253 @@
+<div class="container mt-4" ng-controller="deals_analysis_controller as dm">
+  <!-- 图表区域 -->
+  <div class="row mb-4">
+    <!-- 按时间范围汇总 -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm border-light">
+        <div class="card-body">
+          <!-- 日期控件 -->
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label for="startDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 开始日期:</label>
+            <input type="date" id="startDate" class="form-control" style="max-width: 160px;"
+              ng-model="dm.line_startDate" ng-change="dm.updateLoadDealChart()">
+            <label for="endDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 截至日期:</label>
+            <input type="date" id="endDate" class="form-control" style="max-width: 160px;" ng-model="dm.line_endDate"
+              ng-change="dm.updateLoadDealChart()">
+          </div>
+          <!-- 标题 -->
+          <!-- 图表 -->
+          <div id="lineChart" style="height: 300px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 按项目汇总 -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm border-light">
+        <div class="card-body">
+          <!-- 日期控件 -->
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label for="startDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 开始日期:</label>
+            <input type="date" id="startDate" class="form-control" style="max-width: 160px;"
+              ng-model="dm.project_startDate" ng-change="dm.updateLoadProjectPieChart()">
+            <label for="endDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 截至日期:</label>
+            <input type="date" id="endDate" class="form-control" style="max-width: 160px;" ng-model="dm.project_endDate"
+              ng-change="dm.updateLoadProjectPieChart()">
+          </div>
+          <div id="pieChartProject" style="height: 300px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <!-- 根据客户来源汇总 -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm border-light">
+        <div class="card-body">
+          <!-- 日期控件 -->
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label for="startDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 开始日期:</label>
+            <input type="date" id="startDate" class="form-control" style="max-width: 160px;"
+              ng-model="dm.source_startDate" ng-change="dm.updateLoadSourceBarChart()">
+            <label for="endDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 截至日期:</label>
+            <input type="date" id="endDate" class="form-control" style="max-width: 160px;" ng-model="dm.source_endDate"
+              ng-change="dm.updateLoadSourceBarChart()">
+          </div>
+          <div id="BarChartSource" style="height: 300px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 按人员汇总 -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm border-light">
+        <div class="card-body">
+          <!-- 日期控件 -->
+          <div class="mb-3 d-flex align-items-center gap-2">
+            <label for="startDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 开始日期:</label>
+            <input type="date" id="startDate" class="form-control" style="max-width: 160px;"
+              ng-model="dm.staff_startDate" ng-change="dm.updateloadStaffBarChart()">
+            <label for="endDate" class="form-label mb-0"><i class="fas fa-calendar-day"></i> 截至日期:</label>
+            <input type="date" id="endDate" class="form-control" style="max-width: 160px;" ng-model="dm.staff_endDate"
+              ng-change="dm.updateloadStaffBarChart()">
+          </div>
+          <div id="barChart" style="height: 300px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 成交数据明细列表 -->
+  <div class="tab-pane fade show active" id="dealHistory">
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">成交数据明细</h5>
+      </div>
+      <div class="card-body">
+        <!-- 筛选条件 -->
+        <div class="row mb-4">
+          <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">起始日期</label>
+            <input type="date" class="form-control" ng-model="dm.filter.start_dealDate">
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">截至日期</label>
+            <input type="date" class="form-control" ng-model="dm.filter.end_dealDate">
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">用户ID</label>
+            <input type="number" class="form-control" ng-model="dm.filter.sales_channel_id" placeholder="不输则全部">
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">客户来源</label>
+            <input type="text" class="form-control" ng-model="dm.filter.client_source" placeholder="不输则全部">
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">项目</label>
+            <input type="text" class="form-control" ng-model="dm.filter.deal_project" placeholder="不输则全部">
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3 d-flex align-items-end">
+            <button class="btn btn-outline-success w-100" ng-click="dm.queryDealsReports()">查询</button>
+          </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="table-responsive shadow-sm rounded">
+          <table class="table table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>成交日期</th>
+                <th>成交人</th>
+                <th>客户来源</th>
+                <th>项目</th>
+                <th>成交单元</th>
+                <th>成交工位数</th>
+                <th>签约公司</th>
+                <th>签约金额</th>
+                <th>签约日期</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="report in dm.dealReports" ng-click="dm.showReportDetail(report)" style="cursor: pointer;">
+                <td>{{ report.sign_date | date:'yyyy-MM-dd' }}</td>
+                <td>{{ report.sales_channel_name }}</td>
+                <td>{{ report.client_source }}</td>
+                <td>{{ report.deal_project }}</td>
+                <td>{{ report.deal_unit }}</td>
+                <td>{{ report.deal_workstations }}</td>
+                <td>{{ report.sign_company }}</td>
+                <td>{{ report.signed_amount }}</td>
+                <td>{{ report.sign_date | date:'yyyy-MM-dd'}}</td>
+              </tr>
+              <tr class="table-warning fw-bold">
+                <td colspan="5" class="text-end">总计：</td>
+                <td>{{ dm.getTotalWorkstations() }}</td>
+                <td></td>
+                <td>{{ dm.getTotalAmount() | number:2 }}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- 模态框 -->
+        <div class="modal fade" id="dealDetailModal" tabindex="-1" aria-labelledby="dealDetailLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="dealDetailLabel">成交报告详情</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                  aria-label="关闭"></button>
+              </div>
+              <div class="modal-body">
+                <div class="container-fluid">
+                  <div class="row gy-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">成交日期</label>
+                      <div class="form-control">{{ dm.selectedReport.sign_date | date:'yyyy-MM-dd' }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">签约日期</label>
+                      <div class="form-control">{{ dm.selectedReport.sign_date | date:'yyyy-MM-dd' }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">负责人</label>
+                      <div class="form-control">{{ dm.selectedReport.sales_channel_name }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">客户名称</label>
+                      <div class="form-control">{{ dm.selectedReport.customer_name }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">客户来源</label>
+                      <div class="form-control">{{ dm.selectedReport.client_source }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">签约公司</label>
+                      <div class="form-control">{{ dm.selectedReport.sign_company }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">项目</label>
+                      <div class="form-control">{{ dm.selectedReport.deal_project }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">成交单元</label>
+                      <div class="form-control">{{ dm.selectedReport.deal_unit }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">成交工位数</label>
+                      <div class="form-control">{{ dm.selectedReport.deal_workstations }}</div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">签约金额</label>
+                      <div class="form-control">{{ dm.selectedReport.signed_amount }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">合同时长(月)</label>
+                      <div class="form-control">{{ dm.selectedReport.contract_duration }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">优惠条件</label>
+                      <div class="form-control">{{ dm.selectedReport.discount_conditions }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">对接人</label>
+                      <div class="form-control">{{ dm.selectedReport.client_contact }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">职位</label>
+                      <div class="form-control">{{ dm.selectedReport.client_contact_position }}</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">联系电话</label>
+                      <div class="form-control">{{ dm.selectedReport.client_contact_phone }}</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label fw-bold">备注</label>
+                      <div class="form-control">{{ dm.selectedReport.remarks }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 分页 -->
+        <nav class="d-flex justify-content-between mt-4">
+          <span class="text-muted">共 {{ dm.totalItems }} 条记录</span>
+          <ul class="pagination mb-0">
+            <li class="page-item" ng-class="{disabled: dm.currentPage === 1}">
+              <a class="page-link" ng-click="dm.prevPage()">&laquo; 上一页</a>
+            </li>
+            <li class="page-item" ng-repeat="n in dm.pageRange track by n" ng-class="{active: n===dm.currentPage}">
+              <a class="page-link" ng-click="dm.gotoPage(n)">{{ n }}</a>
+            </li>
+            <li class="page-item" ng-class="{disabled: dm.currentPage === dm.totalPages}">
+              <a class="page-link" ng-click="dm.nextPage()">下一页 &raquo;</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>

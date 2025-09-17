@@ -1,0 +1,370 @@
+/* 定义折叠状态的样式 */
+.collapsed {
+    width: 100px;
+    overflow: hidden;
+}
+
+.collapsed .nav-link {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.collapsed .nav-link i {
+    font-size: 1.2rem;
+}
+
+/* 导航栏整体背景颜色 */
+.sidebar {
+    background-color: #ecf0f1;
+    /* Light, soft pastel grey */
+    color: #2c3e50;
+    /* Dark text color for readability */
+    font-size: 16px;
+    border-right: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+html {
+    font-size: 90%;
+    /* 基础字体大小缩小20% */
+}
+
+/* 当导航栏固定时，确保高度和内容滚动 */
+.sidebar.fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 导航链接样式 */
+.sidebar .nav-link {
+    color: #ecf0f1;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+    font-size: 14px;
+}
+
+/* 鼠标悬停时的效果 */
+.sidebar .nav-link:hover {
+    background-color: #34495e;
+    color: #ffffff;
+}
+
+/* 激活状态的样式 */
+.sidebar .nav-link.active {
+    background-color: #1abc9c;
+    color: #ffffff;
+}
+
+/* 图标与文字间距 */
+.sidebar .nav-link i {
+    margin-right: 8px;
+}
+
+/* 小图标的设置 */
+.sidebar .nav-item i {
+    font-size: 18px;
+}
+
+/* 左侧导航项的分隔线 */
+.sidebar .nav-item {
+    margin-bottom: 10px;
+}
+
+/* 高亮的选项，增加阴影 */
+.sidebar .nav-link.active {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 响应式设计：当屏幕宽度较小时，导航栏宽度变小 */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        position: relative;
+    }
+
+    .sidebar.fixed {
+        width: 100%;
+    }
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    /* 防止换行 */
+    overflow: hidden;
+    /* 隐藏超出的内容 */
+    text-overflow: ellipsis;
+    /* 显示省略号 */
+    max-width: 100px;
+    /* 可调整的最大宽度，根据需要修改 */
+}
+
+/* Markdown渲染样式 */
+.markdown-body {
+    font-family: 'Arial', sans-serif;
+    font-size: 15px;
+    color: #333;
+    line-height: 1.7;
+}
+
+/* 表格样式 */
+.markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    background: #fff;
+    border: 1px solid #dee2e6;
+}
+
+.markdown-body thead {
+    background-color: #f8f9fa;
+}
+
+.markdown-body th,
+.markdown-body td {
+    padding: 10px 15px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.markdown-body tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.markdown-body tr:hover {
+    background-color: #f1f9ff;
+}
+
+/* 小标题 */
+.markdown-body h2,
+.markdown-body h3 {
+    color: #0056b3;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 0.4em;
+    margin-top: 1.5em;
+}
+
+/* 引用块 */
+.markdown-body blockquote {
+    border-left: 4px solid #3498db;
+    padding: 1em;
+    background: #f5f8fa;
+    margin: 1.5em 0;
+    color: #444;
+}
+
+/* 提示框 */
+.markdown-body .suggestions {
+    background: #f9f9f9;
+    border-left: 4px solid #28a745;
+    padding: 1.5em;
+    margin: 2em 0;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    background-color: #f0f2f5;
+}
+
+.card {
+    border-radius: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link.active {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.sidebar {
+    min-width: 200px;
+}
+
+/* 自定义颜色 */
+.text-purple {
+    color: #6f42c1;
+}
+
+.bg-purple-subtle {
+    background-color: #e9d8fd;
+}
+
+.bg-orange-subtle {
+    background-color: #ffe5d0;
+}
+
+.text-orange {
+    color: #fd7e14;
+}
+
+#layerInfo {
+    margin: 20px;
+    font-family: Arial, sans-serif;
+}
+
+#canvas {
+    position: relative;
+    width: 1000px;
+    height: 500px;
+    border: 2px solid #333;
+    margin: 0 auto 20px;
+    background: #f0f0f0;
+}
+
+.unit {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-right: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.unit-info {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1.2;
+}
+
+#controls {
+    width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#controls input {
+    margin: 0 10px;
+    padding: 5px;
+}
+
+#controls button {
+    padding: 5px 10px;
+}
+
+.remaining {
+    background: #ccc;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-sizing: border-box;
+    border-right: 2px solid #fff;
+}
+
+#canvas .unit {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    text-align: center;
+    color: white;
+    font-size: 12px;
+    overflow: hidden;
+    border-right: 1px solid white;
+}
+
+#canvas .unit-info {
+    padding: 4px;
+}
+
+#canvas .remaining {
+    background: repeating-linear-gradient(45deg,
+            #ccc,
+            #ccc 10px,
+            #eee 10px,
+            #eee 20px);
+    text-align: center;
+    font-size: 12px;
+    color: #333;
+}
+
+#floorplan {
+    margin-top: 1rem;
+}
+
+.unit {
+    position: absolute;
+    border: 2px solid #007bff;
+    background-color: rgba(0, 123, 255, 0.2);
+    padding: 5px;
+    box-sizing: border-box;
+    cursor: move;
+}
+
+.unit.selected {
+    border-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.2);
+}
+
+/* 画布阴影 */
+.card-body {
+    background: linear-gradient(145deg, #ffffff, #f1f1f1);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+/* card 边框和阴影 */
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0;
+}
+
+.card-body {
+    border-radius: 0 0 12px 12px;
+}
+
+/* 清除草图按钮的位置和样式 */
+.btn-danger {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-danger:hover {
+    transform: scale(1.1);
+    background-color: #e63946;
+}
+
+.bg-light-green {
+    background-color: #90ee90 !important;
+    /* 浅绿色 LightGreen */
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}

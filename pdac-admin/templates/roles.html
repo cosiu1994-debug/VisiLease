@@ -1,0 +1,118 @@
+<div class="container-fluid p-0" style="height: 100vh; overflow: hidden;" ng-controller="RoleCtrl">
+  <div class="row g-0 h-100">
+    <!-- 左侧角色列表 -->
+    <div class="col-3 border-end d-flex flex-column bg-light">
+      <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+        <h6 class="mb-0">角色列表</h6>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+          <i class="bi bi-plus"></i> 新增角色
+        </button>
+      </div>
+      <div class="flex-grow-1 overflow-auto">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item list-group-item-action" ng-repeat="role in roles" ng-click="selectRole(role)"
+            ng-class="{'active': selectedRole && selectedRole.id === role.id}" style="cursor: pointer;">
+            {{role.id}},{{ role.name }}
+          </li>
+          <li ng-if="roles.length === 0" class="list-group-item text-muted text-center">暂无角色数据</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 新增角色模态框 -->
+    <div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addRoleModalLabel">新增角色</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addRoleForm">
+              <div class="mb-3">
+                <label class="form-label">角色标识（code）</label>
+                <input type="text" class="form-control" ng-model="newRole.code" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">角色名称（name）</label>
+                <input type="text" class="form-control" ng-model="newRole.name">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">描述</label>
+                <textarea class="form-control" rows="2" ng-model="newRole.description"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" ng-click="addRole()">确认新增</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧权限配置 -->
+    <div class="col-9 d-flex flex-column h-100">
+      <div class="px-4 py-3 border-bottom bg-white">
+        <h5 class="mb-0">
+          <span ng-if="selectedRole">权限配置：{{ selectedRole.display_name || selectedRole.name }}</span>
+          <span ng-if="!selectedRole" class="text-muted fst-italic">请选择左侧角色查看权限</span>
+        </h5>
+      </div>
+
+      <div class="flex-grow-1 overflow-auto p-4" ng-if="selectedRole">
+        <div ng-repeat="group in permissionGroups" class="mb-4">
+          <h6 class="text-primary fw-bold border-bottom pb-1 mb-2">{{ group.category }}</h6>
+
+          <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-3">
+            <div class="col" ng-repeat="perm in group.permissions">
+              <div class="border rounded p-3 bg-light">
+                <!-- 1. 权限开关 -->
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="perm-{{perm.code}}" ng-model="perm.checked">
+                  <label class="form-check-label fw-semibold" for="perm-{{perm.code}}">
+                    {{ perm.description || perm.code }}
+                  </label>
+                </div>
+
+                <!-- 2. 限制开关 -->
+                <div class="form-check form-switch ms-2 mb-2" ng-if="perm.checked">
+                  <input class="form-check-input" type="checkbox" id="enable-constraint-{{perm.code}}"
+                    ng-model="perm.constraints_enabled">
+                  <label class="form-check-label small text-muted" for="enable-constraint-{{perm.code}}">
+                    启用约束（资源范围限制）
+                  </label>
+                </div>
+
+                <!-- 2.5 数据访问范围（Scope）选择 -->
+                <div class="ms-3 mb-2" ng-if="perm.checked">
+                  <label class="form-label small">数据访问范围</label>
+                  <select class="form-select form-select-sm" ng-model="perm.scope">
+                    <option value="">-- 请选择 --</option>
+                    <option value="own">仅本人数据（own）</option>
+                    <option value="org">本组织数据（org）</option>
+                    <option value="all">全部数据（all）</option>
+                  </select>
+                </div>
+
+                <!-- 3. 限制配置区域：仅 JSON 输入框 -->
+                <div class="ms-3" ng-if="perm.checked && perm.constraints_enabled">
+                  <label for="json-input-{{perm.code}}" class="form-label small">约束 JSON 配置</label>
+                  <textarea class="form-control font-monospace" id="json-input-{{perm.code}}" rows="6"
+                    ng-model="perm.constraints_json_raw"
+                    placeholder='例如: {"building_ids": [1,2], "sales_channel_ids": ["x", "y"]}'></textarea>
+                  <div class="text-danger small mt-1" ng-if="!isValidJson(perm.constraints_json_raw)">
+                    JSON 格式有误，请检查。
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 保存按钮 -->
+        <button class="btn btn-primary mt-3" ng-click="savePermissions()">保存权限</button>
+      </div>
+    </div>
+  </div>
+</div>

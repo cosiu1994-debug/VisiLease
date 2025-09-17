@@ -1,0 +1,35 @@
+{
+  "code": "contract_approval_v2",
+  "name": "合同审批流程 V2",
+  "definition": {
+    "nodes": [
+      { "id": "start", "type": "start", "name": "开始" },
+      { "id": "manager_approve", "type": "task", "name": "项目经理审批", "role": "project_manager" },
+
+      { "id": "gateway_parallel", "type": "parallel_gateway", "name": "并行处理" },
+      { "id": "financial_review", "type": "task", "name": "财务审核", "role": "finance" },
+      { "id": "legal_review", "type": "task", "name": "法务审核", "role": "legal" },
+      { "id": "gateway_merge", "type": "parallel_gateway", "name": "并行汇聚" },
+
+      { "id": "gateway_condition", "type": "exclusive_gateway", "name": "条件判断" },
+      { "id": "ceo_approve", "type": "task", "name": "CEO 审批", "role": "ceo" },
+
+      { "id": "end", "type": "end", "name": "结束" }
+    ],
+    "transitions": [
+      { "from": "start", "to": "manager_approve" },
+      { "from": "manager_approve", "to": "gateway_parallel" },
+
+      { "from": "gateway_parallel", "to": "financial_review" },
+      { "from": "gateway_parallel", "to": "legal_review" },
+      { "from": "financial_review", "to": "gateway_merge" },
+      { "from": "legal_review", "to": "gateway_merge" },
+
+      { "from": "gateway_merge", "to": "gateway_condition" },
+      { "from": "gateway_condition", "to": "ceo_approve", "condition": "contract.amount > 100000" },
+      { "from": "gateway_condition", "to": "end", "condition": "contract.amount <= 100000" },
+
+      { "from": "ceo_approve", "to": "end" }
+    ]
+  }
+}

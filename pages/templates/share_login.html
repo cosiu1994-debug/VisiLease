@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>登录</title>
+    <link rel="shortcut icon" href="../icons/nine_logo.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* 自定义样式 */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .login-container h2 {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #495057;
+        }
+
+        .form-control {
+            border-radius: 50px;
+            padding-left: 40px;
+        }
+
+        .input-group-text {
+            border-radius: 50px;
+            background-color: #f8f9fa;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            border-radius: 50px;
+            padding: 10px 0;
+            font-size: 16px;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+        .error-message {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6c757d;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        /* 遮罩和加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h2>登录</h2>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="group" class="form-label">权限组</label>
+                    <div class="input-group">
+                        <i class="fa fa-users input-icon"></i>
+                        <input type="text" id="group" name="group" class="form-control" placeholder="请输入权限组" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="id" class="form-label">ID</label>
+                    <div class="input-group">
+                        <i class="fa fa-user input-icon"></i>
+                        <input type="password" id="id" name="id" class="form-control" placeholder="请输入个人ID" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" id="loginBtn">登录</button>
+            </form>
+
+            <p id="errorMessage" class="text-danger mt-3 error-message">用户名或密码错误</p>
+
+            <div class="footer">
+                <p>还没有账户？<a href="#">联系管理员</a></p>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        // 登录表单提交
+        document.getElementById('loginForm').addEventListener('submit', async function (event) {
+            event.preventDefault(); // 阻止默认提交
+            const group = document.getElementById('group').value;
+            const id = document.getElementById('id').value;
+            if (!group || !id) {
+                alert('请填写权限组和ID');
+                return;
+            }
+            const loginButton = document.getElementById('loginBtn');
+            loginButton.textContent = '登录中...';
+            try {
+                const response = await fetch(`/api/proxy?endpoint=login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ group, id })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const roleId = (result.roles && result.roles.length > 0) ? result.roles[0].id : null;
+
+                    localStorage.setItem('user', JSON.stringify({
+                        type: group,
+                        username: result.name,
+                        id: result.id,
+                        token: result.token,
+                        roles: result.roles,
+                        permissions: result.permissions
+                    }));
+
+                    window.location.href = '/pages/templates/reports.html';
+                } else {
+                    document.getElementById('errorMessage').innerText = result.detail.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('登录请求失败:', error);
+                alert('登录失败，请稍后再试');
+            } finally {
+                loginButton.textContent = '登录';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,918 @@
+<div ng-controller="contracts_controller as cm">
+  <div class="row">
+    <!-- 左侧导航栏 -->
+    <nav class="col-md-2 bg-dark text-white p-3 min-vh-100">
+      <h5 class="text-white mb-4">合同管理</h5>
+      <ul class="nav flex-column">
+        <li class="nav-item mb-2" ng-if="hasPermission('contracts:create_contract','ui_control')">
+          <a href="" ng-click="cm.navigateTo('build_contract')" class="nav-link text-white">➕ 新建合同</a>
+        </li>
+        <li class="nav-item mb-2">
+          <a href="" ng-click="cm.navigateTo('contracts_list')" class="nav-link text-white">📄 合同列表</a>
+        </li>
+        <li class="nav-item mb-2">
+          <a href="" ng-click="cm.navigateTo('lessor_list')" class="nav-link text-white">📨合同主体列表</a>
+        </li>
+        <li class="nav-item mb-2">
+          <a href="" ng-click="cm.navigateTo('workflows_list')" class="nav-link text-white">📨已发起的流程</a>
+        </li>
+      </ul>
+    </nav>
+    <!-- 右侧内容区域 -->
+    <main class="col-md-10 px-4 py-4">
+      <!-- 合同列表 -->
+      <section class="position-relative">
+        <div ng-show="cm.activeView === 'contracts_list'">
+
+          <!-- 标题和新建按钮 -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0 fs-5 fw-semibold">合同列表</h2>
+            <a href="" ng-if="hasPermission('contracts:create_contract','ui_control')"
+              ng-click="cm.navigateTo('build_contract')"
+              class="text-decoration-none text-primary d-inline-flex align-items-center gap-1 fw-semibold">
+              <i class="fa-solid fa-circle-plus"></i> 新建合同
+            </a>
+          </div>
+
+          <!-- 查询条件卡片 -->
+          <div class="bg-light rounded-3 border p-3 mb-3 shadow-sm">
+            <form ng-submit="cm.searchContracts()" class="row g-2 align-items-end">
+
+              <div class="col-md-3">
+                <label class="form-label small text-muted">合同编号</label>
+                <input type="text" class="form-control form-control-sm" ng-model="cm.query.contract_number"
+                  placeholder="如 2024-C001">
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label small text-muted">状态</label>
+                <select class="form-select form-select-sm" ng-model="cm.query.status">
+                  <option value="">全部</option>
+                  <option value="draft">草稿</option>
+                  <option value="approve_pending">审核中</option>
+                  <option value="active">生效中</option>
+                  <option value="terminated">终止</option>
+                  <option value="abnormal">异常</option>
+                </select>
+              </div>
+
+              <div class="col-md-2 d-flex justify-content-end align-items-center">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  ng-click="cm.advancedSearch = !cm.advancedSearch">
+                  高级搜索
+                  <i class="fa"
+                    ng-class="{'fa-chevron-down': !cm.advancedSearch, 'fa-chevron-up': cm.advancedSearch}"></i>
+                </button>
+              </div>
+
+              <div class="col-md-5 d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary btn-sm px-3"><i class="fa fa-search me-1"></i> 查询</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" ng-click="cm.resetQuery()"><i
+                    class="fa fa-rotate-left me-1"></i> 重置</button>
+              </div>
+
+              <!-- 高级搜索字段折叠 -->
+              <div class="col-12 mt-2" ng-show="cm.advancedSearch">
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <label class="form-label small text-muted">项目名称</label>
+                    <input type="text" class="form-control form-control-sm" ng-model="cm.query.building_name"
+                      placeholder="项目名称">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-muted">签约日期范围</label>
+                    <div class="input-group input-group-sm">
+                      <flatpickr-range start-model="cm.query.start_date" end-model="cm.query.end_date"
+                        placeholder-start="开始日期" placeholder-end="结束日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }">
+                      </flatpickr-range>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- 合同表格 -->
+          <table class="table table-hover align-middle mb-0 text-center"
+            style="border:1px solid #dee2e6; border-collapse:collapse;">
+            <thead class="bg-light text-center fw-semibold">
+              <tr>
+                <th style="width:50px; border:1px solid #dee2e6;">#</th>
+                <th style="border:1px solid #dee2e6;" class="text-start">合同编号</th>
+                <th style="width:100px; border:1px solid #dee2e6;">状态</th>
+                <th style="width:110px; border:1px solid #dee2e6;">签约日期</th>
+                <th style="min-width:240px; white-space:nowrap; border:1px solid #dee2e6;">起止日期</th>
+                <th style="border:1px solid #dee2e6;" class="text-start">项目</th>
+                <th style="border:1px solid #dee2e6;" class="text-start">租户名称</th>
+                <th style="border:1px solid #dee2e6;" class="text-start">单元编号</th>
+                <th style="width:220px; border:1px solid #dee2e6;">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="contract in cm.contracts" class="align-middle text-center">
+                <td style="border:1px solid #dee2e6;">{{$index + 1}}</td>
+                <td style="border:1px solid #dee2e6;" class="text-start fw-semibold text-primary">
+                  {{contract.contract_number}}</td>
+                <td style="border:1px solid #dee2e6;">
+                  <span class="badge rounded-pill px-3 py-1" ng-class="{
+                    'bg-success': contract.status === 'active',
+                    'bg-secondary': contract.status === 'draft',
+                    'bg-danger': contract.status === 'terminated',
+                    'bg-warning text-dark': contract.status === 'approve_pending'
+                  }">{{contract.status | statusLabel}}</span>
+                </td>
+                <td style="border:1px solid #dee2e6;">{{contract.sign_date | date:'yyyy-MM-dd'}}</td>
+                <td style="border:1px solid #dee2e6; white-space:nowrap;">
+                  <div class="small text-muted">
+                    {{contract.start_date | date:'yyyy-MM-dd'}} ~ {{contract.end_date | date:'yyyy-MM-dd'}}
+                  </div>
+                </td>
+                <td style="border:1px solid #dee2e6;" class="text-start">{{contract.building_names}}</td>
+                <td style="border:1px solid #dee2e6;" class="text-start">{{contract.tenant_name}}</td>
+                <td style="border:1px solid #dee2e6;" class="text-start">{{contract.unit_codes}}</td>
+                <td style="border:1px solid #dee2e6;">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                      ng-click="cm.viewContract(contract)" title="查看合同">
+                      <i class="bi bi-eye me-1"></i> 查看
+                    </button>
+                    <button class="btn btn-sm btn-outline-success d-flex align-items-center"
+                      ui-sref="contract_edit({ id: contract.id })"
+                      ng-if="contract.status === 'draft' || contract.status === 'rejected'" title="编辑合同">
+                      <i class="bi bi-pencil me-1"></i> 编辑
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger d-flex align-items-center"
+                      ng-if="(contract.status === 'draft' || contract.status === 'rejected') && hasPermission('contracts:delete_contract','ui_control')"
+                      ng-click="cm.deleteContract(contract)" title="删除合同">
+                      <i class="bi bi-trash me-1"></i> 删除
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr ng-if="!cm.contracts.length">
+                <td colspan="9" class="text-center py-5 text-muted" style="border:1px solid #dee2e6;">
+                  <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                  暂无符合条件的合同数据
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+
+          <!-- 分页控件 -->
+          <div class="d-flex justify-content-end mt-2">
+            <ul class="pagination mb-0 flex-wrap">
+              <li class="page-item" ng-class="{ disabled: cm.query.page === 1 }">
+                <button class="page-link btn-sm"
+                  ng-click="cm.query.page > 1 && cm.changePage(cm.query.page - 1)">上一页</button>
+              </li>
+
+              <li class="page-item" ng-repeat="p in cm.pages track by $index"
+                ng-class="{ active: p === cm.query.page }">
+                <button class="page-link btn-sm" ng-click="cm.changePage(p)">{{p}}</button>
+              </li>
+
+              <li class="page-item" ng-class="{ disabled: cm.query.page === cm.totalPages() }">
+                <button class="page-link btn-sm"
+                  ng-click="cm.query.page < cm.totalPages() && cm.changePage(cm.query.page + 1)">下一页</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- 悬浮待办入口按钮 -->
+        <button class="btn btn-primary position-fixed" style="bottom: 30px; right: 30px; z-index: 1050;"
+          ng-click="cm.goTasks()">待办任务
+          <span class="badge bg-danger ms-1" ng-if="cm.pendingTasksCount > 0">{{ cm.pendingTasksCount }}</span>
+        </button>
+      </section>
+      <!-- 待办任务模态框 -->
+      <div class="modal fade" id="pendingTasksModal" tabindex="-1" aria-labelledby="pendingTasksModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content border-0 shadow-lg">
+            <!-- Header -->
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title" id="pendingTasksModalLabel">
+                我的待办任务 ({{ cm.pendingTasksCount }})
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <!-- Body -->
+            <div class="modal-body">
+              <div class="list-group" ng-if="cm.pendingTasks.length > 0">
+
+                <!-- 每个任务 -->
+                <a href=""
+                  class="list-group-item list-group-item-action flex-column align-items-start mb-3 p-3 rounded shadow-sm"
+                  ng-repeat="task in cm.pendingTasks" ng-click="cm.goToTask(task); $event.preventDefault();"
+                  style="transition: transform 0.1s;">
+
+                  <!-- 上方：节点名称 + 状态 -->
+                  <div class="d-flex w-100 justify-content-between align-items-center">
+                    <h5 class="mb-1">{{ task.node_name }}</h5>
+                    <span class="badge" ng-class="{
+                            'bg-warning text-dark': task.status === 'PENDING',
+                            'bg-success': task.status === 'APPROVED',
+                            'bg-danger': task.status === 'REJECTED'
+                          }">{{ task.status | taskStatusLabel }}</span>
+                  </div>
+
+                  <!-- 下方：节点类型、合同编号、接收时间 -->
+                  <div class="mt-2 text-muted small">
+                    <div><strong>节点类型：</strong>{{ task.node_name || '-' }}</div>
+                    <div><strong>合同编号：</strong>{{ task.contract_number || '-' }}</div>
+                    <div><strong>接收时间：</strong>{{ task.assigned_at || '-' }}</div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- 无任务 -->
+              <div ng-if="cm.pendingTasks.length === 0" class="alert alert-info text-center my-4">
+                暂无待办任务
+              </div>
+            </div>
+            <!-- Footer -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 创建合同 -->
+      <section>
+        <div ng-show="cm.activeView === 'build_contract'" class="container">
+          <h3>创建合同</h3>
+          <form name="contractForm" ng-submit="cm.submitContract()" novalidate>
+            <!-- 合同基本信息 -->
+            <div class="card p-3 mb-4">
+              <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                  <h5 class="mb-4 text-primary fw-semibold">合同基本信息</h5>
+
+                  <div class="row g-4 row-cols-1 row-cols-md-3">
+                    <div class="col">
+                      <label class="form-label">合同编号</label>
+                      <input type="text" class="form-control" ng-model="cm.contract.contract_number"
+                        placeholder="如:QFZX5-602A-202415" required>
+                    </div>
+
+                    <!-- 出租人下拉列表 -->
+                    <div class="col position-relative">
+                      <label class="form-label">出租人（主体）</label><span class="text-danger">*</span>
+                      <input type="text" class="form-control" placeholder="请输入出租人名称..." ng-model="cm.lessorSearch"
+                        ng-focus="cm.showLessorDropdown = true" ng-blur="cm.handleLessorBlur()"
+                        ng-change="cm.filterLessors()" required />
+                      <ul class="list-group position-absolute w-100 shadow-sm zindex-dropdown"
+                        ng-show="cm.showLessorDropdown"
+                        style="max-height: 200px; overflow-y: auto; top: 100%; left: 0;">
+                        <li class="list-group-item text-muted" ng-if="cm.loadingLessors">
+                          <i class="fas fa-spinner fa-spin me-1"></i> 正在加载出租人...
+                        </li>
+                        <li class="list-group-item list-group-item-action" ng-repeat="lessor in cm.filteredLessors"
+                          ng-click="cm.selectLessor(lessor)">
+                          {{lessor.name}} <small class="text-muted">(ID: {{lessor.id}})</small>
+                        </li>
+                        <li class="list-group-item text-muted"
+                          ng-if="!cm.loadingLessors && !cm.filteredLessors.length && cm.lessorSearch">
+                          没有匹配的出租人
+                        </li>
+                      </ul>
+                    </div>
+                    <!-- 承租人下拉数据 -->
+                    <div class="col position-relative">
+                      <label class="form-label">承租人（主体）</label></label><span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" placeholder="请输入租户名称..." ng-model="cm.tenantSearch"
+                        ng-focus="cm.showTenantDropdown = true" ng-blur="cm.handleTenantBlur()"
+                        ng-change="cm.filterTenants()" />
+
+                      <!-- 下拉列表 -->
+                      <ul class="list-group position-absolute w-100 shadow-sm zindex-dropdown"
+                        ng-show="cm.showTenantDropdown"
+                        style="max-height: 200px; overflow-y: auto; top: 100%; left: 0;">
+                        <li class="list-group-item text-muted" ng-if="cm.loadingTenants">
+                          <i class="fas fa-spinner fa-spin me-1"></i> 正在加载租户...
+                        </li>
+                        <li class="list-group-item list-group-item-action" ng-repeat="tenant in cm.filteredTenants"
+                          ng-click="cm.selectTenant(tenant)">
+                          {{tenant.name}} <small class="text-muted">(ID: {{tenant.id}})</small>
+                        </li>
+                        <li class="list-group-item text-muted"
+                          ng-if="!cm.loadingTenants && !cm.filteredTenants.length && cm.tenantSearch">
+                          没有匹配的租户
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div class="col">
+                      <label class="form-label">签约日期</label></label><span class="text-danger">*</span></label>
+                      <flatpickr-date ng-model="cm.contract.sign_date" placeholder="签约日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+                    </div>
+
+                    <div class="col">
+                      <label class="form-label">付款周期</label></label><span class="text-danger">*</span></label>
+                      <select class="form-select" ng-model="cm.contract.payment_cycle" required>
+                        <option value="" disabled selected hidden>请选择付款周期</option>
+                        <option value="monthly">月付</option>
+                        <option value="quarterly">季付</option>
+                        <option value="yearly">年付</option>
+                        <option value="one_time">一次性付款</option>
+                      </select>
+                    </div>
+
+                    <div class="col">
+                      <label class="form-label">开始日期</label></label><span class="text-danger">*</span></label>
+                      <flatpickr-date ng-model="cm.contract.start_date" placeholder="开始日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+                    </div>
+
+                    <div class="col">
+                      <label class="form-label">结束日期</label></label><span class="text-danger">*</span></label>
+                      <flatpickr-date ng-model="cm.contract.end_date" placeholder="结束日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+                    </div>
+
+                    <div class="col-12">
+                      <label class="form-label">备注</label>
+                      <textarea class="form-control" rows="2" ng-model="cm.contract.remarks"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 签约单元选择（分级加载） -->
+            <div class="card shadow-sm border-0 mb-4">
+              <div class="card-body">
+                <h5 class="mb-4 text-primary fw-semibold">签约单元选择</h5>
+
+                <!-- 项目选择 -->
+                <div class="row g-4 mb-3">
+                  <div class="col-md-6 col-lg-4">
+                    <label class="form-label">选择项目</label></label><span class="text-danger">*</span></label>
+                    <select class="form-select" ng-model="cm.selectedBuilding"
+                      ng-options="b as b.name for b in cm.buildings" ng-change="cm.onBuildingChange()">
+                      <option value="">请选择项目</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6 col-lg-4" ng-if="cm.floors.length > 0">
+                    <label class="form-label">选择楼层</label></label><span class="text-danger">*</span></label>
+                    <select class="form-select" ng-model="cm.selectedFloor"
+                      ng-options="f as f.level + '层' for f in cm.floors" ng-change="cm.loadUnits()">
+                      <option value="">请选择楼层</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- 可选单元列表 -->
+                <div class="mb-4" ng-if="cm.availableUnits.length > 0">
+                  <label class="form-label fw-semibold mb-2">可选单元列表</label></label><span
+                    class="text-danger">*</span></label>
+
+                  <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle text-center mb-3">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 60px;">选择</th>
+                          <th>单元编号</th>
+                          <th>出租面积</th>
+                          <th>挂牌单价</th>
+                          <th>管理费单价</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr ng-repeat="u in cm.availableUnits">
+                          <td>
+                            <input type="checkbox" ng-model="u.selected" class="form-check-input m-0" />
+                          </td>
+                          <td class="fw-semibold text-truncate" style="max-width: 140px;">{{ u.code }}</td>
+                          <td>{{ u.lease_area }}㎡</td>
+                          <td>¥{{ u.rent_unit_price | number:2 }}</td>
+                          <td>¥{{ u.management_fee_per_sqm | number:2 }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="text-end">
+                    <button type="button" class="btn btn-primary btn-sm px-4" ng-click="cm.addSelectedUnits()"
+                      ng-disabled="!cm.hasSelectedUnits()">
+                      添加选中单元
+                    </button>
+                  </div>
+                </div>
+                <!-- 已添加单元列表 -->
+                <div ng-if="cm.formData.units.length > 0">
+                  <h6 class="mb-3 fw-semibold text-primary">已选签约单元</h6>
+                  <div ng-repeat="unit in cm.formData.units track by unit.unit_id"
+                    class="border rounded p-3 mb-3 bg-light-subtle shadow-sm">
+                    <div class="row g-3 align-items-center">
+                      <div class="col-md-2">
+                        <label class="form-label">单元ID</label>
+                        <div>{{unit.unit_id}}</div>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">单元编号</label>
+                        <div>{{unit.unit_code}}</div>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">出租面积（㎡）</label>
+                        <div>{{unit.lease_area}}</div>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">挂牌租金（元/㎡）</label>
+                        <div>{{unit.rent_unit_price}}</div>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">挂牌管理费单价（元/㎡）</label>
+                        <div>{{unit.deal_management_fee_per_sqm}}</div>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">成交单价（元/㎡） <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" ng-model="unit.deal_unit_price"
+                          placeholder="请输入成交租金单价" step="0.01">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">成交管理费单价（元/㎡）<span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" placeholder="请输入成交管理费单价"
+                          ng-model="cm.termOptions.serviceRate" required>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">备注</label>
+                        <input type="text" class="form-control" ng-model="unit.remarks" placeholder="请输入备注">
+                      </div>
+                      <div class="col-md-1 d-flex align-items-end justify-content-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm"
+                          ng-click="cm.removeUnitById(unit.unit_id)">
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- 查询完但无数据 -->
+                <div class="alert alert-warning text-center py-3"
+                  ng-if="cm.unitsLoaded && cm.availableUnits.length === 0">暂无可用单元，请检查该楼层是否有空置房源
+                </div>
+              </div>
+            </div>
+            <!-- 条款设置 -->
+            <div class="card shadow-sm border-0 mb-4">
+              <div class="card-body">
+                <h5 class="mb-4 text-primary fw-semibold">条款设置</h5>
+                <!-- 基础条款 -->
+                <div class="row g-3 align-items-center mb-2">
+                  <div class="col-md-4">
+                    <label class="form-label">起始租金（元/㎡）<span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" ng-model="cm.termOptions.baseRentRate" step="0.01"
+                      disabled>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">拆分方式<span class="text-danger">*</span></label>
+                    <select class="form-select" ng-model="cm.termOptions.splitMode" required>
+                      <option value="" disabled selected hidden>请选择拆分方式</option>
+                      <option value="NATURAL_MONTH">自然月</option>
+                      <option value="FULL_MONTH">整月周期（暂不支持）</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">保证金（元）<span class="text-danger">*</span></label>
+                  <div class="input-group mb-1">
+                    <select class="form-select" ng-model="cm.depositOption" ng-change="cm.updateDeposit()">
+                      <option value="1">一押</option>
+                      <option value="2">二押</option>
+                      <option value="3">三押</option>
+                      <option value="custom">自定义</option>
+                    </select>
+
+                    <input type="number" class="form-control" ng-model="cm.contract.deposit_amount"
+                      ng-readonly="cm.depositOption !== 'custom'" required>
+                  </div>
+                </div><br>
+                <!-- 租金递增规则 -->
+                <div class="mb-4">
+                  <label class="form-label fw-semibold mb-2">租金递增</label>
+                  <div ng-repeat="rule in cm.termOptions.increaseRules track by $index"
+                    class="row g-3 align-items-center mb-2">
+                    <div class="col-md-3">
+                      <select class="form-select" ng-model="rule.type" required>
+                        <option value="ANNIVERSARY">周年递增</option>
+                        <option value="POINT">指定日期递增</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <flatpickr-date ng-if="rule.type === 'ANNIVERSARY'" ng-model="rule.anchorDate" placeholder="选择基准日"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+
+                      <flatpickr-date ng-if="rule.type === 'POINT'" ng-model="rule.effectiveDate" placeholder="生效日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+                    </div>
+
+                    <div class="col-md-3">
+                      <input type="number" step="0.01" class="form-control" ng-model="rule.rate" placeholder="递增比例"
+                        required>
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-center gap-2">
+                      <button type="button" class="btn btn-sm btn-outline-danger flex-fill"
+                        ng-click="cm.removeIncreaseRule($index)">
+                        <i class="fas fa-trash-alt me-1"></i>删除
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-info flex-fill"
+                        ng-click="cm.appendIncreaseRuleToRemarks()">
+                        <i class="fas fa-comment-dots me-1"></i>填入备注
+                      </button>
+                    </div>
+
+                  </div>
+                  <!-- 移动按钮到此靠近区域 -->
+                  <button type="button" class="btn btn-outline-secondary btn-sm" ng-click="cm.addIncreaseRule()">
+                    添加递增规则
+                  </button>
+                </div>
+                <!-- 免租期设置 -->
+                <div>
+                  <label class="form-label fw-semibold mb-2">免租期</label>
+                  <div ng-repeat="free in cm.termOptions.freePeriods track by $index"
+                    class="row g-3 align-items-center mb-2">
+                    <div class="col-md-4">
+                      <flatpickr-date ng-model="free.startDate" placeholder="开始日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+                    </div>
+
+                    <div class="col-md-4">
+                      <flatpickr-date ng-model="free.endDate" placeholder="结束日期"
+                        options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                      </flatpickr-date>
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-center gap-2">
+                      <button type="button" class="btn btn-sm btn-outline-danger flex-fill"
+                        ng-click="cm.removeFreePeriod($index)">
+                        <i class="fas fa-trash-alt me-1"></i>删除
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-info flex-fill"
+                        ng-click="cm.appendFreePeriodClause()">
+                        <i class="fas fa-comment-dots me-1"></i>填入备注
+                      </button>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" ng-click="cm.addFreePeriod()">
+                    添加免租期
+                  </button>
+                </div>
+              </div>
+            </div>
+            <file-upload file-model="cm.contractFile" file-name="cm.contractFileName"
+              uploaded-files="cm.formData.uploadedFiles">
+            </file-upload>
+            <!-- 预览合同模态框 -->
+            <div class="modal fade" id="contractPreviewModal" tabindex="-1" aria-labelledby="contractPreviewLabel"
+              aria-hidden="true">
+              <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+
+                  <!-- Header -->
+                  <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title" id="contractPreviewLabel">
+                      <i class="bi bi-file-earmark-text me-2"></i>条款预览
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+
+                  <div class="modal-body">
+                    <!-- 关键日期进度条 -->
+                    <div class="mb-4">
+                      <div class="d-flex justify-content-between small text-muted">
+                        <div>签约日期：{{cm.contract.sign_date | date:'yyyy-MM-dd'}}</div>
+                        <div>起租日期：{{cm.contract.start_date | date:'yyyy-MM-dd'}}</div>
+                        <div>到期日期：{{cm.contract.end_date | date:'yyyy-MM-dd'}}</div>
+                      </div>
+                      <div class="progress mt-2" style="height:6px;">
+                        <div class="progress-bar bg-success" style="width:33%;"></div>
+                        <div class="progress-bar bg-warning" style="width:62%;"></div>
+                        <div class="progress-bar bg-danger" style="width:5%;"></div>
+                      </div>
+                    </div>
+
+                    <!-- 基本信息 & 条款 设置 -->
+                    <div class="row g-3 mb-4">
+                      <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                          <div class="card-header bg-light">
+                            <i class="bi bi-info-circle me-1"></i><strong>基本信息</strong>
+                          </div>
+                          <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                              <li><strong>合同编号：</strong>{{cm.contract.contract_number}}</li>
+                              <li><strong>出租人（主体）：</strong>{{cm.pre_contract.lessor.name}}</li>
+                              <li><strong>承租人（主体）：</strong>{{cm.pre_contract.tenant.name || '-'}}</li>
+                              <li><strong>签约日期：</strong>{{cm.contract.sign_date | date:'yyyy-MM-dd'}}</li>
+                              <li><strong>备注：</strong>{{cm.contract.remarks || '—'}}</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                          <div class="card-header bg-light">
+                            <i class="bi bi-gear-fill me-1"></i><strong>条款设置</strong>
+                          </div>
+                          <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                              <li><strong>付款周期：</strong>{{cm.contract.payment_cycle==='monthly'?'按月':'按季'}}</li>
+                              <li><strong>起始 / 结束：</strong>{{cm.contract.start_date | date:'yyyy-MM-dd'}} ~
+                                {{cm.contract.end_date | date:'yyyy-MM-dd'}}</li>
+                              <li><strong>起始租金：</strong>¥{{cm.termOptions.baseRentRate | number:2}}/㎡</li>
+                              <li><strong>管理费：</strong>¥{{cm.termOptions.serviceRate | number:2}}/㎡</li>
+                              <li><strong>拆分方式：</strong>{{cm.termOptions.splitMode==='NATURAL_MONTH'?'自然月':'整月周期'}}</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 签约单元 -->
+                    <div class="card mb-4 shadow-sm">
+                      <div class="card-header bg-light">
+                        <i class="bi bi-house-door me-1"></i><strong>签约单元 ({{cm.formData.units.length}})</strong>
+                      </div>
+                      <div class="card-body p-0">
+                        <div class="table-responsive">
+                          <table class="table table-hover mb-0">
+                            <thead class="table-light text-center">
+                              <tr>
+                                <th>ID</th>
+                                <th>编号</th>
+                                <th>面积</th>
+                                <th>挂牌租金</th>
+                                <th>成交单价</th>
+                                <th>管理费</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr ng-repeat="unit in cm.formData.units">
+                                <td>{{unit.unit_id}}</td>
+                                <td>{{unit.unit_code}}</td>
+                                <td>{{unit.lease_area}}㎡</td>
+                                <td>¥{{unit.rent_unit_price | number:2}}</td>
+                                <td>¥{{unit.deal_unit_price | number:2}}</td>
+                                <td>¥{{unit.deal_management_fee_per_sqm | number:2}}</td>
+                              </tr>
+                              <tr ng-if="!cm.formData.units.length">
+                                <td colspan="6" class="text-center text-muted">未添加单元</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 递增规则 & 免租期 -->
+                    <div class="row g-4 mb-4">
+                      <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                          <div class="card-header bg-light">
+                            <i class="bi bi-arrow-up-right-circle me-1"></i><strong>递增规则</strong>
+                          </div>
+                          <div class="card-body p-0">
+                            <ul class="list-group list-group-flush">
+                              <li class="list-group-item d-flex justify-content-between align-items-center"
+                                ng-repeat="rule in cm.termOptions.increaseRules">
+                                {{rule.type==='ANNIVERSARY'?'周年递增':'指定日期递增'}}
+                                <span>{{(rule.anchorDate||rule.effectiveDate)|date:'yyyy-MM-dd'}}</span>
+                                <span class="badge bg-primary rounded-pill ms-2">{{(rule.rate*100)|number:2}}%</span>
+                              </li>
+                              <li class="list-group-item text-center text-muted"
+                                ng-if="!cm.termOptions.increaseRules.length">
+                                无递增规则
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                          <div class="card-header bg-light">
+                            <i class="bi bi-clock-history me-1"></i><strong>免租期</strong>
+                          </div>
+                          <div class="card-body p-0">
+                            <ul class="list-group list-group-flush">
+                              <li class="list-group-item d-flex justify-content-between"
+                                ng-repeat="free in cm.termOptions.freePeriods">
+                                <span>{{free.startDate|date:'yyyy-MM-dd'}} ~ {{free.endDate|date:'yyyy-MM-dd'}}</span>
+                              </li>
+                              <li class="list-group-item text-center text-muted"
+                                ng-if="!cm.termOptions.freePeriods.length">
+                                无免租期
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Footer -->
+                  <div class="modal-footer justify-content-center border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                      <i class="bi bi-x-circle me-1"></i>关闭
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mb-3">
+              <button type="button" class="btn btn-info" ng-disabled="contractForm.$invalid"
+                ng-click="cm.openPreview()">预览条款</button>
+              <button type="submit" class="btn btn-primary" ng-disabled="contractForm.$invalid">保存条款</button>
+            </div>
+          </form>
+        </div>
+        <!-- Toast 容器 -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3 z-3">
+          <div id="appToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+            aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body">提示内容</div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="关闭"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- 合同主体维护列表 -->
+      <section>
+        <div ng-show="cm.activeView === 'lessor_list'">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>合同主体列表</h4>
+            <button class="btn btn-primary" ng-click="cm.openLessorModal()">
+              <i class="bi bi-plus-lg"></i> 新增出租人
+            </button>
+          </div>
+
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>联系人</th>
+                <th>电话</th>
+                <th>邮箱</th>
+                <th>地址</th>
+                <th>税号</th>
+                <th>开户行/账号</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="lessor in cm.lessors">
+                <td>{{lessor.id}}</td>
+                <td>{{lessor.name}}</td>
+                <td>{{lessor.contact_person}}</td>
+                <td>{{lessor.contact_phone}}</td>
+                <td>{{lessor.email}}</td>
+                <td>{{lessor.address}}</td>
+                <td>{{lessor.tax_number}}</td>
+                <td>
+                  <div>{{lessor.bank_name}}</div>
+                  <div>{{lessor.bank_account_number}}</div>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-secondary me-1" ng-click="cm.openLessorModal(lessor)">编辑</button>
+                  <button class="btn btn-sm btn-danger" ng-click="cm.deleteLessor(lessor.id)">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 分页（可选） -->
+          <nav aria-label="出租人分页">
+            <ul class="pagination justify-content-center">
+              <li class="page-item" ng-class="{ disabled: cm.lessorPage===1 }">
+                <button class="page-link" ng-click="cm.changeLessorPage(cm.lessorPage-1)">上一页</button>
+              </li>
+              <li class="page-item" ng-repeat="p in [].constructor(cm.lessorTotalPages) track by $index"
+                ng-class="{ active: cm.lessorPage===$index+1 }">
+                <button class="page-link" ng-click="cm.changeLessorPage($index+1)">{{$index+1}}</button>
+              </li>
+              <li class="page-item" ng-class="{ disabled: cm.lessorPage===cm.lessorTotalPages }">
+                <button class="page-link" ng-click="cm.changeLessorPage(cm.lessorPage+1)">下一页</button>
+              </li>
+            </ul>
+          </nav>
+
+          <!-- 新增/编辑模态框 -->
+          <div class="modal fade" id="lessorModal" tabindex="-1" aria-labelledby="lessorModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="lessorModalLabel">{{cm.editingLessor.id ? '编辑出租人' : '新增出租人'}}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form name="lessorForm" novalidate ng-submit="cm.saveLessor()">
+                  <div class="modal-body">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.name" required>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">联系人</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.contact_person">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">电话</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.contact_phone">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">电子邮箱</label>
+                        <input type="email" class="form-control" ng-model="cm.editingLessor.email">
+                      </div>
+                      <div class="col-md-12">
+                        <label class="form-label">地址</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.address">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">法定代表人</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.legal_person">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">税号</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.tax_number">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">开户银行</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.bank_name">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">银行账号</label>
+                        <input type="text" class="form-control" ng-model="cm.editingLessor.bank_account_number">
+                      </div>
+                      <div class="col-md-12">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-control" rows="3" ng-model="cm.editingLessor.remarks"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary" ng-disabled="lessorForm.$invalid">保存</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- 我发起的流程 -->
+      <section ng-show="cm.activeView === 'workflows_list'" class="p-3">
+        <h4>已发起的流程</h4>
+
+        <table class="table table-striped align-middle">
+          <thead>
+            <tr>
+              <th>流程编号</th>
+              <th>合同编号</th>
+              <th>项目名称</th>
+              <th>备注</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="flow in cm.workflows">
+              <td>{{flow.business_key}}</td>
+              <td>{{flow.context_json.contract_number}}</td>
+              <td>{{flow.context_json.building_name}}</td>
+              <td>{{flow.context_json.remarks}}</td>
+              <td>
+                <span class="badge bg-warning" ng-if="flow.status === 'RUNNING'">审批中</span>
+                <span class="badge bg-success" ng-if="flow.status === 'APPROVED'">已审核</span>
+                <span class="badge bg-danger" ng-if="flow.status === 'REJECTED'">已驳回</span>
+              </td>
+              <td>{{flow.started_at | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+              <td>
+                <button class="btn btn-sm btn-primary" ng-click="cm.viewWorkflow(flow)">查看</button>
+              </td>
+            </tr>
+            <tr ng-if="!cm.workflows || cm.workflows.length === 0">
+              <td colspan="7" class="text-center text-muted">暂无流程</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</div>

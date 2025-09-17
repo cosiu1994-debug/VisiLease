@@ -1,0 +1,130 @@
+<div class="container-fluid p-4" ng-controller="PermissionCtrl" style="height: 100vh; overflow: auto;">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">权限管理</h4>
+    <button class="btn btn-primary" ng-click="openAddPermissionModal()">
+      <i class="bi bi-plus"></i> 新增权限
+    </button>
+  </div>
+
+  <div ng-repeat="group in permissionGroups" class="mb-5">
+    <h5 class="text-primary border-bottom pb-1 mb-3">{{ group.category }}</h5>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 5%;">ID</th>
+            <th style="width: 20%;">权限 Code</th>
+            <th style="width: 5%;">是否页面控制点</th>
+            <th style="width: 20%;">描述</th>
+            <th style="width: 5%">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="perm in group.permissions">
+            <td>{{ perm.id }}</td>
+            <td class="text-monospace">{{ perm.code }}</td>
+            <td>{{ perm.type && perm.type.indexOf('ui_control') !== -1 ? '是' : '否' }}</td>
+            <td>{{ perm.description || '-' }}</td>
+            <td>
+              <div class="d-flex">
+                <button class="btn btn-sm btn-outline-danger me-2" ng-click="deletePermission(perm)">删除</button>
+                <button class="btn btn-sm btn-outline-info" ng-click="editPermission(perm)">修改</button>
+              </div>
+            </td>            
+          </tr>
+          <tr ng-if="group.permissions.length === 0">
+            <td colspan="4" class="text-center text-muted">暂无权限数据</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>    
+  </div>
+
+  <!-- 新增权限 Modal -->
+  <div class="modal fade" id="addPermissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" ng-submit="addPermission()">
+        <div class="modal-header">
+          <h5 class="modal-title">新增权限</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">权限 Code <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" ng-model="newPermission.code" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">权限类型 <span class="text-danger">*</span></label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" id="typeAction" name="permissionType"
+                ng-model="newPermission.mainType" value="action" required>
+              <label class="form-check-label" for="typeAction">动作权限（action）</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" id="typeData" name="permissionType"
+                ng-model="newPermission.mainType" value="data" required>
+              <label class="form-check-label" for="typeData">数据权限（data）</label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="uiControlCheck" ng-model="newPermission.uiControl" />
+              <label class="form-check-label" for="uiControlCheck">是否页面控制点（ui_control）</label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">描述</label>
+            <textarea class="form-control" ng-model="newPermission.description" rows="3"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">资源分类 <span class="text-danger">*</span></label>
+            <select class="form-select" ng-model="newPermission.resource_id" required>
+              <option ng-repeat="res in resourceOptions" value="{{res.id}}">{{res.name}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">新增</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- 编辑权限模态框 -->
+  <div class="modal fade" id="editPermissionModal" tabindex="-1" aria-labelledby="editPermissionModalLabel" aria-hidden="true" ng-show="editingPermission">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editPermissionModalLabel">编辑权限</h5>
+          <button type="button" class="btn-close" ng-click="cancelEdit()"></button>
+        </div>
+        <div class="modal-body">
+          <form name="editPermissionForm" ng-submit="submitEditPermission()">
+            <div class="mb-3">
+              <label for="editCode" class="form-label">权限 Code <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="editCode" ng-model="editingPermission.code" required>
+            </div>
+            <div class="mb-3">
+              <label for="editDescription" class="form-label">描述</label>
+              <input type="text" class="form-control" id="editDescription" ng-model="editingPermission.description">
+            </div>
+            <div class="mb-3">
+              <label for="editType" class="form-label">类型</label>
+              <input type="text" class="form-control" id="editType" ng-model="editingPermission.type">
+            </div>
+            <div class="text-end">
+              <button type="button" class="btn btn-secondary me-2" ng-click="cancelEdit()">取消</button>
+              <button type="submit" class="btn btn-primary" ng-disabled="editPermissionForm.$invalid">保存</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

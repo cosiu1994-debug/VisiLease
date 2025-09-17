@@ -1,0 +1,474 @@
+<style>
+    /* 扁平化风格的自定义样式 */
+    /* 1. 卡片：去掉深阴影，用轻微边框 */
+    .card {
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        border-radius: 0.5rem;
+    }
+
+    /* 2. 卡片头：纯色背景，无渐变 */
+    .card-header {
+        background-color: #f8f9fa;
+        /* 浅灰色 */
+        border-bottom: 1px solid #e0e0e0;
+        font-weight: 500;
+        font-size: 1.125rem;
+    }
+
+    /* 3. 主标题：纯色，下边框做分割 */
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #0d6efd;
+        /* Bootstrap primary */
+        border-bottom: 2px solid #0d6efd;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* 4. Badge 简化颜色，矩形圆角 */
+    .badge-status {
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.35rem 0.75rem;
+        border-radius: 0.375rem;
+    }
+
+    .badge-draft {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .badge-active {
+        background-color: #198754;
+        color: #fff;
+    }
+
+    .badge-other {
+        background-color: #6c757d;
+        color: #fff;
+    }
+
+    /* 5. 备注框：浅灰背景、无额外边框 */
+    .remarks-box {
+        background-color: #f1f3f5;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        color: #495057;
+        font-style: normal;
+        font-size: 0.95rem;
+    }
+
+    /* 6. 表格：简化表头颜色，行高稍大 */
+    .table thead th {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table td,
+    .table th {
+        vertical-align: middle;
+        padding: 0.75rem;
+        color: #343a40;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f3f5;
+    }
+
+    /* 专门针对 Angular 控制的模态框 */
+    .custom-modal {
+        display: block;
+        /* 让 ng-show 控制显示 */
+        opacity: 1;
+        visibility: visible;
+        position: fixed;
+        /* 固定在屏幕中间 */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        /* 半透明遮罩 */
+        z-index: 1050;
+        /* 和 Bootstrap 弹窗一致 */
+        overflow-y: auto;
+        /* 避免内容溢出 */
+    }
+
+    .custom-modal .modal-dialog {
+        margin: 1.75rem auto;
+        /* Bootstrap 默认 */
+    }
+
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+    }
+
+    .modal-content {
+        transition: all 0.3s ease-in-out;
+    }
+</style>
+
+<div class="container-lg py-5" ng-if="cdm.contract">
+    <div class="d-flex justify-content-end mb-3"
+        ng-if="(cdm.contract.contract.status === 'draft' || cdm.contract.contract.status === 'rejected')&&hasPermission('contracts:edit_contract','ui_control')">
+        <a ui-sref="contract_edit({ id: cdm.contract.contract.id })" class="btn btn-primary">编辑合同</a>
+    </div>
+    <!-- 主标题 -->
+    <h1 class="page-title">合同详情 – {{cdm.contract.contract.contract_number}}</h1>
+
+    <!-- 基本信息 -->
+    <section class="mb-5">
+        <div class="card">
+            <div class="card-header">基本信息</div>
+            <div class="card-body">
+                <div class="row gy-4">
+                    <div class="col-md-4">
+                        <strong>合同编号：</strong>
+                        <span class="text-dark">{{cdm.contract.contract.contract_number}}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>出租人（主体）：</strong>
+                        <span class="text-dark">{{cdm.contract.contract.lessor_name}}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>承租人（主体）：</strong>
+                        <span class="text-dark">{{cdm.contract.contract.tenant_name}}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>签约日期：</strong>
+                        <span class="text-dark">{{cdm.contract.contract.sign_date | formatDate}}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>起止日期：</strong>
+                        <span class="text-dark">
+                            {{cdm.contract.contract.start_date | formatDate}} ~ {{cdm.contract.contract.end_date |
+                            formatDate}}
+                        </span>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center">
+                        <strong class="me-2">状态：</strong>
+                        <span class="badge-status" ng-class="{
+                            'badge-draft': cdm.contract.contract.status === 'draft',
+                            'badge-active': cdm.contract.contract.status === 'active',
+                            'badge-other': cdm.contract.contract.status !== 'draft' && cdm.contract.contract.status !== 'active'
+                            }">
+                            {{cdm.contract.contract.status | statusLabel}}
+                        </span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>支付周期：</strong>
+                        <span class="text-dark">{{cdm.contract.contract.payment_cycle | paymentCycleText}}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>押金：</strong>
+                        <span class="text-danger fw-semibold">¥{{cdm.contract.contract.deposit_amount | number}}</span>
+                    </div>
+                    <div class="col-12">
+                        <strong>备注：</strong>
+                        <div class="remarks-box">{{cdm.contract.contract.remarks || '无'}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 房源信息 -->
+    <section class="mb-5">
+        <div class="card">
+            <div class="card-header">房源信息</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>单元编号</th>
+                                <th>项目</th>
+                                <th>租赁面积</th>
+                                <th>成交单价</th>
+                                <th>管理费单价</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="u in cdm.contract.units">
+                                <td>{{$index + 1}}</td>
+                                <td>{{u.unit_code}}</td>
+                                <td>{{u.building_name}}</td>
+                                <td>{{u.lease_area}}</td>
+                                <td>¥{{u.deal_unit_price}}</td>
+                                <td>¥{{u.deal_management_fee_per_sqm}}</td>
+                                <td>{{u.remarks || '无'}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 合同期明细 -->
+    <section>
+        <div class="card">
+            <div class="card-header">合同期明细</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>起止</th>
+                                <th>租金单价</th>
+                                <th>管理费单价</th>
+                                <th>月数</th>
+                                <th>应收租金</th>
+                                <th>应收管理费</th>
+                                <th>应收总计</th>
+                                <th>是否免租</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="t in cdm.contract.terms">
+                                <td>{{$index + 1}}</td>
+                                <td>{{t.term_start | formatDate}} ~ {{t.term_end | formatDate}}</td>
+                                <td>¥{{t.deal_unit_price}}</td>
+                                <td>¥{{t.service_rate | number}}</td>
+                                <td>{{ t.month_equivalent | monthEquivalentToDays : t.term_start }}</td>
+                                <td>¥{{t.average_monthly_rent | number}}</td>
+                                <td>¥{{t.average_monthly_service_fee | number}}</td>
+                                <td>¥{{(+t.average_monthly_rent + +t.average_monthly_service_fee) | number}}</td>
+                                <td>
+                                    <span class="badge rounded-pill"
+                                        ng-class="t.is_rent_free ? 'bg-success text-white' : 'bg-secondary text-white'">
+                                        {{t.is_rent_free ? '是' : '否'}}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 文件列表 -->
+    <file-list files="cdm.contract.files"></file-list>
+    <!-- 提交审批表单 -->
+    <div class="modal custom-modal" tabindex="-1" role="dialog" ng-show="cdm.showSubmitApprovalModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        提交合同审批 – {{cdm.contract.contract.contract_number}}
+                    </h5>
+                    <button type="button" class="btn-close" ng-click="cdm.closeSubmitApprovalModal()"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form ng-submit="cdm.confirmSubmitApproval()">
+
+                        <!-- 提示文字 -->
+                        <p>确认提交审批？提交后合同将进入待审批状态，无法修改。</p>
+
+                        <!-- 模板选择 -->
+                        <div class="mb-3" ng-if="cdm.loadingTemplates">
+                            正在加载模板列表...
+                        </div>
+
+                        <div class="mb-3" ng-if="!cdm.loadingTemplates && cdm.templates.length > 1">
+                            <label class="form-label">选择审批模板</label>
+                            <select class="form-control" ng-model="cdm.selectedTemplateId"
+                                ng-options="tpl.id as tpl.name for tpl in cdm.templates">
+                                <option value="">-- 请选择 --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" ng-if="!cdm.loadingTemplates && cdm.templates.length === 1">
+                            当前使用模板：<strong>{{cdm.templates[0].name}}</strong>
+                        </div>
+
+                        <!-- 审批备注（可选） -->
+                        <div class="mb-3">
+                            <label for="submitApprovalComments" class="form-label">审批备注（可选）</label>
+                            <textarea class="form-control" id="submitApprovalComments"
+                                ng-model="cdm.submitApprovalComments" rows="3" placeholder="填写给审批人的说明..."></textarea>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary"
+                                ng-click="cdm.closeSubmitApprovalModal()">取消</button>
+                            <button type="submit" class="btn btn-primary"
+                                ng-disabled="cdm.templates.length > 1 && !cdm.selectedTemplateId">
+                                提交审批
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 草稿状态，显示提交审批按钮 -->
+<div ng-if="cdm.contract.contract.status === 'draft'" class="position-fixed bottom-0 end-0 p-4">
+    <button class="btn btn-lg btn-outline-primary" ng-click="cdm.openSubmitApprovalModal()">
+        提交审批
+    </button>
+</div>
+<!-- 审批进度 -->
+<div class="modal custom-modal" tabindex="-1" role="dialog" ng-show="cdm.showApprovalProgressModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    审批进度 – {{cdm.contract.contract.contract_number}}
+                    <small class="text-muted" ng-if="cdm.workflowStatus">（当前状态：{{cdm.workflowStatus}}）</small>
+                </h5>
+                <button type="button" class="btn-close" ng-click="cdm.closeApprovalProgressModal()"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- 流程状态提示 -->
+                <div class="alert alert-info" ng-if="cdm.workflowStatus === 'RUNNING'">审批中...</div>
+                <div class="alert alert-success" ng-if="cdm.workflowStatus === 'APPROVED'">已审核</div>
+                <div class="alert alert-danger" ng-if="cdm.workflowStatus === 'REJECTED'">已驳回</div>
+
+                <table class="table table-striped align-middle">
+                    <thead>
+                    </thead>
+                    <tbody>
+
+                        <!-- 开始节点 -->
+                        <tr ng-if="cdm.workflow.flow[0].type === 'start'" class="bg-light text-center fw-bold">
+                            <td colspan="5">
+                                开始 – 发起人: {{cdm.started_by_name || cdm.instance_started_by || '未知'}}
+                            </td>
+                        </tr>
+
+                        <!-- 普通节点和并行节点 -->
+                        <tr ng-repeat="group in groupedFlow track by $index">
+                            <!-- 并行节点组 -->
+                            <td ng-repeat="node in group" style="border-left: 1px solid #ddd; text-align:center;">
+                                <div>{{node.node_name}}</div>
+                                <div>{{node.assignee_role || '待分配'}}</div>
+                                <div>
+                                    <span class="badge bg-warning" ng-if="node.status === 'PENDING'">待审批</span>
+                                    <span class="badge bg-success" ng-if="node.status === 'APPROVED'">已审批</span>
+                                    <span class="badge bg-danger" ng-if="node.status === 'REJECTED'">已驳回</span>
+                                    <span class="badge bg-secondary" ng-if="node.status === 'SKIPPED'">已跳过</span>
+                                    <span class="badge bg-secondary" ng-if="node.status === 'PROCESSED'">已处理</span>
+                                    <span class="badge bg-primary" ng-if="node.status === 'CURRENT'">当前</span>
+                                    <span class="badge bg-secondary" ng-if="node.status === 'UNREACHED'">未到达</span>
+                                </div>
+                                <div>{{node.comment || '-'}}</div>
+                                <div>
+                                    <span ng-if="node.acted_at">{{node.acted_at | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span ng-if="!node.acted_at && node.assigned_at">{{node.assigned_at |
+                                        date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                                    <span ng-if="!node.acted_at && !node.assigned_at">-</span>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- 结束节点 -->
+                        <tr ng-if="cdm.workflow.flow[cdm.workflow.flow.length - 1].type === 'end'"
+                            class="bg-light text-center fw-bold">
+                            <td colspan="5">结束</td>
+                        </tr>
+
+                        <!-- 没有任务节点提示 -->
+                        <tr ng-if="!cdm.workflow.flow || cdm.workflow.flow.length === 0">
+                            <td colspan="5" class="text-center text-muted">暂无任务节点</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+
+                <div class="text-end mt-3">
+                    <button class="btn btn-secondary" ng-click="cdm.closeApprovalProgressModal()">关闭</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 右下角按钮组 -->
+<div class="position-fixed bottom-0 end-0 p-4 d-flex gap-2">
+    <!-- 审批按钮：仅当当前用户有待办任务且关联合同ID匹配 -->
+    <button class="btn btn-lg btn-primary" ng-if="cdm.showApprovalButton" ng-click="cdm.openApprovalModal(task)">
+        审批
+    </button>
+
+    <!-- 待审批状态：显示查看进度 -->
+    <button class="btn btn-lg btn-outline-secondary"
+        ng-if="cdm.contract.contract.status === 'approve_pending'||cdm.contract.contract.status == 'active'"
+        ng-click="cdm.openApprovalProgressModal()">
+        查看审批进度
+    </button>
+</div>
+
+<div class="container-lg py-5" ng-if="!cdm.contract">
+    <div class="alert alert-info">合同详情加载中或未找到。</div>
+</div>
+
+<!-- 审批模态框 -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="approvalModalLabel">审批任务</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="关闭"></button>
+            </div>
+
+            <div class="modal-body">
+                <div ng-if="cdm.currentTask">
+                    <p><strong>节点名称：</strong>{{ cdm.currentTask.node_name }}</p>
+                    <p><strong>合同编号：</strong>{{ cdm.currentTask.contract_number || '-' }}</p>
+                    <p><strong>任务ID：</strong>{{ cdm.currentTask.id }}</p>
+
+                    <div class="mb-3">
+                        <label for="approvalComment" class="form-label">审批意见</label>
+                        <textarea id="approvalComment" class="form-control" ng-model="cdm.approvalComment" rows="3"
+                            placeholder="请输入审批意见"></textarea>
+                    </div>
+                </div>
+                <div ng-if="!cdm.currentTask" class="alert alert-info">
+                    暂无待审批任务
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" ng-click="cdm.submitApproval('REJECT')">驳回</button>
+                <button type="button" class="btn btn-primary" ng-click="cdm.submitApproval('APPROVE')">同意</button>
+            </div>
+
+        </div>
+    </div>
+</div>

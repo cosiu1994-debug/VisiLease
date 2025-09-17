@@ -1,0 +1,107 @@
+{
+    "units:read_building_card": {
+        "description": "可查看单元卡片的项目约束",
+        "constraints_json": {
+            "building_ids": []
+        }
+    },
+    "contracts:create_contract": {
+        "description": "创建合同权限",
+        "constraints_json": {}
+    },
+    "contracts:update_contract": {
+        "description": "编辑合同权限",
+        "constraints_json": {}
+    },
+    "contracts:delete_contract": {
+        "description": "删除合同权限",
+        "constraints_json": {}
+    },
+    "contracts:read_contract_details": {
+        "description": "查看合同详情",
+        "constraints_json": {}
+    },
+    "contracts:contracts_list": {
+        "description": "合同列表的可查看范围",
+        "constraints_json": {
+            "building_ids": []
+        }
+    },
+    "units:allocate_units": {
+        "description": "在全层分配单元",
+        "constraints_json": {}
+    },
+    "units:update_unit_info": {
+        "description": "更新单元信息",
+        "constraints_json": {}
+    },
+    "units:delete_units": {
+        "description": "删除单元",
+        "constraints_json": {}
+    },
+    "units:read_unit_info": {
+        "description": "查看单元详情",
+        "constraints_json": {}
+    },
+    "units:read_units_list": {
+        "description": "查看单元列表",
+        "constraints_json": {
+            "building_ids": []
+        }
+    },
+    "units:split_unit": {
+        "description": "分割单元",
+        "constraints_json": {}
+    },
+    "units:merge_units": {
+        "description": "合并单元",
+        "constraints_json": {}
+    },
+    "units:add_building": {
+        "description": "新增楼栋",
+        "constraints_json": {}
+    },
+    "units:add_floor": {
+        "description": "新增楼层",
+        "constraints_json": {}
+    },
+    "units:read_lease_stats": {
+        "description": "查看出租统计数据",
+        "constraints_json": {}
+    },
+    "units:export_buildings_list": {
+        "description": "导出楼栋（卡片）数据",
+        "constraints_json": {}
+    },
+    "units:export_floors_list": {
+        "description": "导出楼层列表数据",
+        "constraints_json": {}
+    },
+    "units:export_units_list": {
+        "description": "导出单元列表数据",
+        "constraints_json": {}
+    },
+    "contracts:add_lessor": {
+        "description": "新增出租主体",
+        "constraints_json": {}
+    },
+    "contracts:edit_lessor_info": {
+        "description": "查看出租主体详情",
+        "constraints_json": {}
+    },
+    "contracts:delete_lessor": {
+        "description": "删除出租主体",
+        "constraints_json": {}
+    },
+    "units:read_floors_list": {
+        "description": "查看楼层列表",
+        "constraints_json": {
+            "building_ids": [],
+            "level": []
+        }
+    },
+    "contract:read_lessor_list": {
+        "description": "查看出租人列表",
+        "constraints_json": {}
+    }
+}

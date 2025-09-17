@@ -1,0 +1,39 @@
+<div ng-controller="WorkflowDefinitionDetailCtrl" class="p-3">
+
+    <h4>流程模板详情：{{ definition.name || '加载中...' }}</h4>
+    <div class="mb-3 text-muted">{{ definition.description }}</div>
+
+    <div id="flowchartContainer"
+        style="position: relative; width: 100%; min-height: 500px; border: 1px solid #eee; background: #f9f9f9; overflow: auto;">
+    </div>
+
+    <!-- 节点详情模态框 -->
+    <div class="modal fade" id="nodeModal" tabindex="-1" aria-labelledby="nodeModalLabel" aria-hidden="true"
+        data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form ng-submit="saveAssignee()">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="nodeModalLabel">节点详情与配置</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                    </div>
+                    <div class="modal-body" ng-if="selectedNode">
+                        <p><strong>ID:</strong> {{selectedNode.id}}</p>
+                        <p><strong>名称:</strong> {{selectedNode.name}}</p>
+                        <p><strong>类型:</strong> {{selectedNode.type}}</p>
+                        <div class="mb-3">
+                            <label for="assigneeInput" class="form-label">负责人配置</label>
+                            <input type="text" id="assigneeInput" class="form-control" ng-model="selectedNode.assignee"
+                                placeholder="请输入负责人名称" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>

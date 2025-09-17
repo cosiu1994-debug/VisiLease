@@ -1,0 +1,313 @@
+<div class="container">
+    <h3>编辑合同</h3>
+    <form name="editContractForm" novalidate ng-submit="cem.submit_contract_editing()">
+        <!-- 合同基本信息 -->
+        <div class="card p-3 mb-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="mb-4 text-primary fw-semibold">合同基本信息</h5>
+
+                    <div class="row g-4 row-cols-1 row-cols-md-3">
+                        <div class="col">
+                            <label class="form-label">合同编号</label>
+                            <input type="text" class="form-control" placeholder="如:QFZX5-602A-202415"
+                                ng-model="cem.formdata.contract.contract_number" required>
+                        </div>
+
+                        <div class="col position-relative">
+                            <label class="form-label">出租人（主体）<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" placeholder="请输入出租人名称..."
+                                ng-model="cem.lessorSearch" ng-keyup="cem.filterLessors()"
+                                ng-focus="cem.filterLessors()" ng-blur="cem.handleLessorBlur()" required>
+                            <ul class="list-group position-absolute w-100 shadow-sm zindex-dropdown"
+                                style="max-height: 200px; overflow-y: auto; top: 100%; left: 0;"
+                                ng-show="cem.showLessorDropdown">
+                                <li class="list-group-item text-muted" ng-if="cem.loadingLessors">正在加载出租人...</li>
+                                <li class="list-group-item list-group-item-action"
+                                    ng-repeat="lessor in cem.filteredLessors" ng-click="cem.selectLessor(lessor)">
+                                    {{lessor.name}}<small class="text-muted">(ID: {{lessor.id}})</small>
+                                </li>
+                                <li class="list-group-item text-muted"
+                                    ng-if="!cem.loadingLessors && cem.filteredLessors.length === 0">
+                                    未找到匹配出租人
+                                </li>
+                            </ul>
+                        </div>
+
+
+                        <div class="col position-relative">
+                            <label class="form-label">承租人（主体）<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" placeholder="请输入租户名称..." ng-model="cem.tenantSearch"
+                                ng-keyup="cem.filterTenants()" ng-focus="cem.filterTenants()"
+                                ng-blur="cem.handleTenantBlur()" required>
+                            <ul class="list-group position-absolute w-100 shadow-sm zindex-dropdown"
+                                style="max-height: 200px; overflow-y: auto; top: 100%; left: 0;"
+                                ng-show="cem.showTenantDropdown">
+                                <li class="list-group-item text-muted" ng-if="cem.loadingTenants">正在加载租户...</li>
+                                <li class="list-group-item list-group-item-action"
+                                    ng-repeat="tenant in cem.filteredTenants" ng-click="cem.selectTenant(tenant)">
+                                    {{tenant.name}}<small class="text-muted">(ID: {{tenant.id}})</small>
+                                </li>
+                                <li class="list-group-item text-muted"
+                                    ng-if="!cem.loadingTenants && cem.filteredTenants.length === 0">
+                                    未找到匹配租户
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col">
+                            <label class="form-label">签约日期<span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" ng-model="cem.formdata.contract.sign_date" required>
+                        </div>
+
+                        <div class="col">
+                            <label class="form-label">付款周期<span class="text-danger">*</span></label>
+                            <select class="form-select" ng-model="cem.formdata.contract.payment_cycle" required>
+                                <option value="" disabled selected hidden>请选择付款周期</option>
+                                <option value="monthly">月付</option>
+                                <option value="quarterly">季付</option>
+                                <option value="yearly">年付</option>
+                                <option value="one_time">一次性付款</option>
+                            </select>
+                        </div>
+
+                        <div class="col">
+                            <label class="form-label">开始日期<span class="text-danger">*</span></label>
+                            <flatpickr-date ng-model="cem.formdata.contract.start_date" placeholder="开始日期"
+                                options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                            </flatpickr-date>
+                        </div>
+
+                        <div class="col">
+                            <label class="form-label">结束日期<span class="text-danger">*</span></label>
+                            <flatpickr-date ng-model="cem.formdata.contract.end_date" placeholder="结束日期"
+                                options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }" required>
+                            </flatpickr-date>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">备注</label>
+                            <textarea class="form-control" ng-model="cem.formdata.contract.remarks" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 签约单元选择 -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="mb-4 text-primary fw-semibold">签约单元选择</h5>
+
+                <!-- 楼栋 + 楼层 横向排列 -->
+                <div class="row g-4 mb-3">
+                    <div class="col-md-6 col-lg-4">
+                        <label class="form-label">选择项目<span class="text-danger">*</span></label>
+                        <select class="form-select" ng-model="cem.selectedBuilding"
+                            ng-options="b as b.name for b in cem.buildings track by b.id"
+                            ng-change="cem.onBuildingChange()">
+                            <option value="">请选择项目</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4" ng-if="cem.selectedBuilding">
+                        <label class="form-label">选择楼层<span class="text-danger">*</span></label>
+                        <select class="form-select" ng-model="cem.selectedFloor"
+                            ng-options="f as f.floor for f in cem.floors track by f.id" ng-change="cem.loadUnits()">
+                            <option value="">请选择楼层</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 可选单元列表 -->
+                <div ng-if="cem.selectedFloor && cem.availableUnits.length > 0" class="mb-4">
+                    <label class="form-label fw-semibold mb-2">可选单元列表</label>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered align-middle text-center mb-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 60px;">选择</th>
+                                    <th>单元编号</th>
+                                    <th>出租面积（㎡）</th>
+                                    <th>挂牌租金（元/㎡）</th>
+                                    <th>管理费单价（元/㎡）</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="unit in cem.availableUnits track by unit.id">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input m-0" ng-model="unit.selected">
+                                    </td>
+                                    <td>{{unit.code}}</td>
+                                    <td>{{unit.lease_area}}</td>
+                                    <td>{{unit.rent_unit_price}}</td>
+                                    <td>{{unit.management_fee_per_sqm}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 添加按钮 -->
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary btn-sm px-4" ng-click="cem.addSelectedUnits()"
+                            ng-disabled="!cem.hasSelectedUnits()">
+                            添加选中单元
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 已添加单元列表 -->
+                <div ng-if="cem.formdata.units.length > 0" class="mt-4">
+                    <h6 class="mb-3 fw-semibold text-primary">已选签约单元</h6>
+                    <div ng-repeat="unit in cem.formdata.units track by unit.unit_id"
+                        class="border rounded p-3 mb-3 bg-light-subtle shadow-sm">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-2">
+                                <label class="form-label">单元ID</label>
+                                <div>{{unit.unit_id}}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">单元编号</label>
+                                <div>{{unit.unit_code}}</div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">出租面积（㎡）</label>
+                                <div>{{unit.lease_area}}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">挂牌租金（元/㎡）</label>
+                                <div>{{unit.rent_unit_price}}</div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">管理费单价（元/㎡）</label>
+                                <div>{{unit.deal_management_fee_per_sqm}}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">成交单价（元/㎡） <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" ng-model="unit.deal_unit_price"
+                                    placeholder="请输入成交租金单价" step="0.01" ng-change="cem.updateUnitPrice(unit)">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">成交管理费单价（元/㎡）<span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" ng-model="cem.formdata.serviceRate"
+                                    placeholder="请输入成交管理费单价" step="0.01" ng-change="cem.updateUnitPrice(unit)">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">备注</label>
+                                <input type="text" class="form-control" ng-model="unit.remarks" placeholder="请输入备注">
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end justify-content-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                    ng-click="cem.removeUnitById(unit.unit_id)">
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 条款设置 -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="mb-4 text-primary fw-semibold">条款设置</h5>
+
+                <div class="row g-3 align-items-center mb-2">
+                    <div class="col-md-4">
+                        <label class="form-label">起始租金（元/㎡）<span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" step="0.01" ng-model="cem.formdata.baseRentRate"
+                            disabled>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">拆分方式<span class="text-danger">*</span></label>
+                        <select class="form-select" ng-model="cem.formdata.splitMode">
+                            <option value="" disabled selected hidden>请选择拆分方式</option>
+                            <option value="NATURAL_MONTH">自然月</option>
+                            <option value="FULL_MONTH">整月周期（暂不支持）</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">保证金（元）<span class="text-danger">*</span></label>
+                        <div class="input-group mb-1">
+                            <select class="form-select" ng-model="cem.formdata.deposit_multiple"
+                                ng-change="cem.updateDepositAmount()">
+                                <option value="1">一押</option>ss
+                                <option value="2">二押</option>
+                                <option value="3">三押</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                            <input type="number" class="form-control" ng-model="cem.formdata.deposit_amount"
+                                ng-change="cem.updateDepositMultiple()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 租金递增 -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold mb-2">租金递增</label>
+                    <div class="row g-3 align-items-center mb-2"
+                        ng-repeat="rule in cem.formdata.termOptions.increaseRules track by $index">
+                        <div class="col-md-3">
+                            <select class="form-select" ng-model="rule.type">
+                                <option value="ANNIVERSARY">周年递增</option>
+                                <option value="POINT">指定日期递增</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <flatpickr-date ng-if="rule.type === 'ANNIVERSARY'" ng-model="rule.anchorDate"
+                                placeholder="选择基准日" options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }">
+                            </flatpickr-date>
+
+                            <flatpickr-date ng-if="rule.type === 'POINT'" ng-model="rule.effectiveDate"
+                                placeholder="生效日期" options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }">
+                            </flatpickr-date>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" step="0.01" class="form-control" placeholder="递增比例"
+                                ng-model="rule.rate">
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-danger flex-fill"
+                                ng-click="cem.removeIncreaseRule($index)">删除</button>
+                            <button type="button" class="btn btn-sm btn-outline-info flex-fill"
+                                ng-click="cem.appendIncreaseRuleToRemarks()">填入备注</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                        ng-click="cem.addIncreaseRule()">添加递增规则</button>
+                </div>
+                <!-- 免租期 -->
+                <div>
+                    <label class="form-label fw-semibold mb-2">免租期</label>
+                    <div class="row g-3 align-items-center mb-2"
+                        ng-repeat="free in cem.formdata.termOptions.freePeriods track by $index">
+                        <div class="col-md-4">
+                            <flatpickr-date ng-model="free.startDate" placeholder="开始日期"
+                                options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }">
+                            </flatpickr-date>
+                        </div>
+
+                        <div class="col-md-4">
+                            <flatpickr-date ng-model="free.endDate" placeholder="结束日期"
+                                options="{ locale: flatpickr.l10ns.zh, dateFormat: 'Y-m-d' }">
+                            </flatpickr-date>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-danger flex-fill"
+                                ng-click="cem.removeFreePeriod($index)">删除</button>
+                            <button type="button" class="btn btn-sm btn-outline-info flex-fill"
+                                ng-click="cem.appendFreePeriodToRemarks()">填入备注</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                        ng-click="cem.addFreePeriod()">添加免租期</button>
+                </div>
+            </div>
+        </div>
+
+        <file-upload file-name="cem.fileName" uploaded-files="cem.uploadedFiles"></file-upload>
+
+        <div class="d-flex justify-content-end gap-2 mb-3">
+            <button type="button" class="btn btn-info">预览条款</button>
+            <button type="submit" class="btn btn-primary">保存条款</button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,187 @@
+<div class="row g-3" ng-controller="WorkflowBuilderCtrl">
+  <!-- 左侧：节点类型 -->
+  <div class="col-md-2">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-light">
+        <h6 class="mb-0 text-center fw-bold">节点类型</h6>
+      </div>
+      <div class="list-group list-group-flush">
+        <button class="list-group-item list-group-item-action text-center fw-semibold" ng-repeat="type in nodeTypes"
+          ng-click="addNode(type)">
+          {{type.label}}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中间：画布 -->
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light">
+        <h6 class="mb-0 fw-bold">流程设计画布</h6>
+      </div>
+      <div class="position-relative bg-white border"
+        style="width:100%;height:600px;overflow:hidden;border-radius:.25rem;">
+        <!-- 连线 -->
+        <svg class="position-absolute top-0 start-0" width="100%" height="600" style="pointer-events:none; z-index:0;">
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+            </marker>
+          </defs>
+          <g ng-repeat="t in workflow.definition.transitions">
+            <line ng-attr-x1="{{getNodeCenter(t.from).x}}" ng-attr-y1="{{getNodeCenter(t.from).y}}"
+              ng-attr-x2="{{getNodeCenter(t.to).x}}" ng-attr-y2="{{getNodeCenter(t.to).y}}"
+              stroke="{{t.condition=='false'?'red':'#333'}}" stroke-width="2" marker-end="url(#arrowhead)" />
+            <text ng-attr-x="{{(getNodeCenter(t.from).x + getNodeCenter(t.to).x)/2}}"
+              ng-attr-y="{{(getNodeCenter(t.from).y + getNodeCenter(t.to).y)/2 - 6}}" font-size="12"
+              fill="{{t.condition=='false'?'red':'#0d6efd'}}">
+              {{ t.condition || (t.order !== undefined ? ('#' + (t.order+1)) : '') }}
+            </text>
+          </g>
+        </svg>
+
+        <!-- 节点 -->
+        <div ng-repeat="node in workflow.definition.nodes"
+          class="position-absolute text-center border rounded shadow-sm p-2" ng-style="{
+               top: node.y + 'px',
+               left: node.x + 'px',
+               minWidth: '100px',
+               height: '50px',
+               lineHeight: '20px',
+               backgroundColor: '#f8f9fa',
+               cursor: 'move',
+               borderWidth: '2px',
+               borderColor: (selectedNode && selectedNode.id === node.id) ? '#0d6efd' : '#dee2e6',
+               borderStyle: 'solid',
+               borderRadius: node.type === 'condition' ? '0' : '8px',
+               transform: node.type === 'condition' ? 'rotate(45deg)' : 'none'
+             }" ng-mousedown="startDrag($event,node)" ng-click="selectNode(node)">
+          <div ng-style="{ transform: node.type === 'condition' ? 'rotate(-45deg)' : 'none' }">
+            <div class="fw-bold">{{node.name}}</div>
+            <small class="text-muted" ng-if="node.role && node.type!=='condition'">{{node.role}}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧：属性面板 -->
+  <div class="col-md-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-light">
+        <h6 class="mb-0 fw-bold">流程属性 / 节点属性</h6>
+      </div>
+      <div class="card-body" style="overflow-y:auto;">
+        <!-- 流程模板字段 -->
+        <div class="mb-3">
+          <label class="form-label">流程编号</label>
+          <input type="text" class="form-control" ng-model="workflow.code" placeholder="唯一编号">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">流程名称</label>
+          <input type="text" class="form-control" ng-model="workflow.name" placeholder="流程名称">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">流程描述</label>
+          <textarea class="form-control" ng-model="workflow.description" rows="3" placeholder="流程描述"></textarea>
+        </div>
+
+        <!-- 节点属性 -->
+        <div ng-if="selectedNode">
+          <hr>
+          <h6 class="fw-bold">节点属性</h6>
+          <div class="mb-2">
+            <label class="form-label">节点名称</label>
+            <input type="text" class="form-control" ng-model="selectedNode.name">
+          </div>
+
+          <!-- 分流/汇聚设置 -->
+          <div class="row">
+            <div class="col-12 mb-2">
+              <label class="form-label">分流模式</label>
+              <select class="form-select" ng-model="selectedNode.splitMode"
+                ng-options="m.value as m.label for m in splitModes"></select>
+            </div>
+            <div class="col-12 mb-2">
+              <label class="form-label">汇聚规则</label>
+              <select class="form-select" ng-model="selectedNode.joinMode"
+                ng-options="m.value as m.label for m in joinModes"></select>
+            </div>
+          </div>
+
+          <select class="form-select" ng-model="selectedNode.role" ng-options="r.id as r.name for r in roles"
+            ng-change="loadUsers(selectedNode.role)">
+            <option value="">选择角色</option>
+          </select>
+
+          <!-- 条件节点：条件分支 -->
+          <div class="mb-2" ng-if="selectedNode.type==='condition'">
+            <label class="form-label">条件分支</label>
+            <div class="border rounded p-2 mb-2" ng-repeat="(i, c) in selectedNode.conditions">
+              <div class="d-flex gap-2">
+                <input class="form-control form-control-sm" placeholder="条件描述，如：true / false / amount > 100000"
+                  ng-model="c.label">
+                <select class="form-select form-select-sm" ng-model="c.target">
+                  <option value="">选择目标节点</option>
+                  <option ng-repeat="n in workflow.definition.nodes" ng-if="n.id !== selectedNode.id" value="{{n.id}}">
+                    {{n.name}}</option>
+                </select>
+              </div>
+              <input type="text" class="form-control form-control-sm mt-1" ng-model="c.expression"
+                placeholder="可选表达式，如：amount > 100000">
+              <div class="d-flex gap-2 mt-1">
+                <button class="btn btn-sm btn-outline-primary flex-grow-1"
+                  ng-click="applyConditionRow(i)">应用到连线</button>
+                <button class="btn btn-sm btn-outline-danger flex-grow-1" ng-click="removeConditionRow(i)">删除分支</button>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-secondary w-100" ng-click="addConditionRow()">+ 添加条件分支</button>
+          </div>
+
+          <!-- 上游节点添加连线 -->
+          <div class="mb-2">
+            <label class="form-label">选择上游节点并添加连线</label>
+            <div class="input-group">
+              <select class="form-select" ng-model="selectedNode.upstream"
+                ng-options="n.id as n.name for n in workflow.definition.nodes | filter:{ id: '!' + selectedNode.id } track by n.id">
+                <option value="">无</option>
+              </select>
+              <button class="btn btn-primary" ng-click="addTransitionByUpstream(selectedNode)">添加</button>
+            </div>
+            <small class="text-muted">若上游节点为“串行分流”，会自动为该出边编号(order)。</small>
+          </div>
+
+          <button class="btn btn-sm btn-outline-danger w-100" ng-click="removeNode(selectedNode)">删除节点</button>
+        </div>
+
+        <div ng-if="!selectedNode" class="text-muted text-center py-3">
+          选中节点可编辑属性
+        </div>
+
+        <hr>
+        <h6 class="fw-bold mb-2">当前连线</h6>
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center"
+            ng-repeat="(idx, t) in workflow.definition.transitions">
+            <div>
+              {{ getNodeNameById(t.from) }} → {{ getNodeNameById(t.to) }}
+              <span class="text-primary" ng-if="t.condition">（{{t.condition}}）</span>
+              <span class="badge bg-secondary ms-2" ng-if="t.order !== undefined">序 {{t.order+1}}</span>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-secondary" title="上移" ng-if="t.order !== undefined"
+                ng-click="bumpOrder(t, 'up')">▲</button>
+              <button class="btn btn-sm btn-outline-secondary" title="下移" ng-if="t.order !== undefined"
+                ng-click="bumpOrder(t, 'down')">▼</button>
+              <button class="btn btn-sm btn-outline-danger" ng-click="removeTransition(idx)">删</button>
+            </div>
+          </li>
+        </ul>
+
+        <hr>
+        <button class="btn btn-primary w-100 mt-2" ng-click="saveWorkflow()">保存流程模板</button>
+      </div>
+    </div>
+  </div>
+</div>

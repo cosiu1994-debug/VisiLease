@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html ng-app="reportApp">
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>联合办公招商工作平台</title>
+    <!-- 引入Angular与Bootstrap 5 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-sanitize/1.8.3/angular-sanitize.min.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/1.1.1/angular-ui-router.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
+
+    <script src="../scripts/app.js"></script>
+    <script src="../scripts/services/AuthFactory.js"></script>
+    <script src="../scripts/services/authInterceptor_factory.js"></script>
+    <script src="../scripts/routers/reportApp_routers.config.js"></script>
+    <script src="../scripts/controllers/deals_reports_controller.js"></script>
+    <script src="../scripts/controllers/main_controller.js"></script>
+    <script src="../scripts/services/common_filters.js"></script>
+    <script src="../scripts/services/common_directives.js"></script>
+    <script src="../scripts/controllers/unit_source_controller.js"></script>
+    <script src="../scripts/controllers/contract_source_controller.js"></script>
+    <script src="../scripts/controllers/contract_detail_controller.js"></script>
+    <script src="../scripts/controllers/crm_controller.js"></script>
+    <script src="../scripts/controllers/contract_edit_controller.js"></script>
+    <!-- 指令 -->
+    <script src="../scripts/directives/file_upload.js"></script>
+    <script src="../scripts/directives/file_list.js"></script>
+    <script src="../scripts/directives/flatpickr.js"></script>
+    <script src="../scripts/directives/flatpickr_date.js"></script>
+    <!-- 图标 -->
+    <link rel="shortcut icon" href="../icons/nine_logo.png">
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+
+<body class="container-fluid">
+    <div ui-view></div>
+    <footer style="text-align: center;">
+        <p style="font-size: 12px;">&copy; 2025 co. 保留所有权利.</p>
+    </footer>
+</body>
+
+</html>

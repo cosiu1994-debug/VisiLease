@@ -1,0 +1,89 @@
+<div class="container-fluid p-0" style="height: 100vh; overflow: hidden;">
+  <div class="row h-100 g-0">
+
+    <!-- 📋 左侧用户列表 -->
+    <div class="col-3 border-end d-flex flex-column bg-light">
+      <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+        <h6 class="mb-0">用户列表</h6>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+          <i class="bi bi-plus"></i> 新增用户
+        </button>
+      </div>
+      <div class="flex-grow-1 overflow-auto">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item list-group-item-action" ng-repeat="user in users" ng-click="selectUser(user)"
+            ng-class="{'active': selectedUser && selectedUser.id === user.id}" style="cursor: pointer;">
+            <div class="fw-semibold">{{user.id}},{{ user.name }}</div>
+            <div class="text-muted small">{{ user.email || user.phone || '无联系方式' }}</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 新增用户模态框 -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addUserModalLabel">新增用户</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addUserForm">
+              <div class="mb-3">
+                <label class="form-label">名称</label>
+                <input type="text" class="form-control" ng-model="newUser.name" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">用户类型</label>
+                <input type="text" class="form-control" ng-model="newUser.user_type">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">状态</label>
+                <select class="form-select" ng-model="newUser.status">
+                  <option value="1">启用</option>
+                  <option value="0">禁用</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" ng-click="addUser()">确认新增</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🎯 右侧角色绑定 -->
+    <div class="col-9 d-flex flex-column">
+      <div class="px-4 py-3 border-bottom bg-white">
+        <h5 class="mb-0">
+          <span ng-if="selectedUser">绑定角色：{{ selectedUser.name }}</span>
+          <span ng-if="!selectedUser" class="text-muted fst-italic">请选择左侧用户</span>
+        </h5>
+      </div>
+
+      <div class="flex-grow-1 overflow-auto p-4" ng-if="selectedUser">
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+          <div class="col" ng-repeat="role in roles">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="role-{{role.id}}" ng-model="role.checked" />
+              <label class="form-check-label" for="role-{{role.id}}">
+                {{ role.display_name || role.name }}
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button class="btn btn-primary" ng-click="saveUserRoles()" ng-disabled="saving">
+            <span ng-if="!saving">保存绑定角色</span>
+            <span ng-if="saving"><span class="spinner-border spinner-border-sm me-1"></span>保存中...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

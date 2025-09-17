@@ -1,0 +1,1235 @@
+<div ng-controller="CRMController as ccm" class="row">
+    <nav class="col-md-3 col-lg-2 sidebar py-4" style="background-color: #2c3e50; border-right: 1px solid #ddd;">
+        <ul class="nav flex-column nav-pills" id="crmTab" role="tablist">
+            <li class="nav-item" ng-if="ccm.user.type === 'admin' || ccm.user.type === 'staff'">
+                <a class="nav-link active text-white" id="tab-newCustomer" data-bs-toggle="tab" href="#newCustomer"
+                    role="tab" aria-controls="newCustomer" aria-selected="true">
+                    <i class="fas fa-user-plus me-2"></i> 新建客户档案
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin'">
+                <a class="nav-link text-white" id="tab-newReport" data-bs-toggle="tab" href="#newReport" role="tab"
+                    aria-controls="newReport" aria-selected="false">
+                    <i class="fas fa-file-alt me-2"></i> 新建工作日报
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin' || ccm.user.type === 'staff'">
+                <a class="nav-link text-white" id="tab-socialMedia" data-bs-toggle="tab" href="#socialMedia" role="tab"
+                    aria-controls="socialMedia" aria-selected="false">
+                    <i class="fas fa-share-alt me-2"></i> 社交媒体运营
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin'">
+                <a class="nav-link text-white" id="tab-summary" data-bs-toggle="tab" href="#summary" role="tab"
+                    aria-controls="summary" aria-selected="false">
+                    <i class="fas fa-chart-line me-2"></i> 工作日报汇总
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin'">
+                <a class="nav-link text-white" id="tab-history" data-bs-toggle="tab" href="#history" role="tab"
+                    aria-controls="history" aria-selected="false">
+                    <i class="fas fa-history me-2"></i> 历史工作报告
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin' || ccm.user.type === 'staff'">
+                <a class="nav-link text-white" id="tab-customerList" data-bs-toggle="tab" href="#customerList"
+                    role="tab" aria-controls="customerList" aria-selected="false">
+                    <i class="fas fa-list me-2"></i> 客户档案列表
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin'">
+                <a class="nav-link text-white" id="tab-dealsAnalysis" data-bs-toggle="tab" ui-sref="dealsAnalysis"
+                    role="tab" aria-controls="dealsAnalysis" aria-selected="false">
+                    <i class="fas fa-database me-2"></i> 成交数据汇总
+                </a>
+            </li>
+
+            <li class="nav-item" ng-if="ccm.user.type === 'admin'">
+                <a class="nav-link text-white disabled" href="#">
+                    <i class="fas fa-chart-pie me-2"></i> 客户数据分析（开发中...）
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <!-- 右侧内容区 -->
+    <main class="col-md-10 py-4">
+        <div class="tab-content">
+            <!-- 汇总数据页 -->
+            <div class="tab-pane fade" id="summary">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">汇总数据</div>
+                    <div class="card-body">
+                        <form class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label">用户ID</label>
+                                <input type="number" class="form-control" ng-model="ccm.salesChannelId"
+                                    placeholder="请输入用户ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">开始日期</label>
+                                <input type="date" class="form-control" ng-model="ccm.startDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">结束日期</label>
+                                <input type="date" class="form-control" ng-model="ccm.endDate">
+                            </div>
+                            <div class="col-md-3 d-flex gap-2">
+                                <button type="button" class="btn btn-primary flex-fill"
+                                    ng-click="ccm.fetchReport()">查询</button>
+                                <button type="button" class="btn btn-secondary flex-fill"
+                                    ng-click="ccm.summaryReport_txt()">生成文字报告</button>
+                            </div>
+                        </form>
+                        <!-- 工作量 & 工作成果看板 -->
+                        <div class="row mt-4" ng-if="ccm.reportData && ccm.reportData.success">
+                            <!-- 工作量指标 -->
+                            <div class="col-12 mb-4">
+                                <h4 class="fw-bold text-primary mb-3 border-bottom pb-2">
+                                    <i class="fas fa-tasks me-2"></i>工作量指标
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-2 mb-4"
+                                        ng-repeat="item in ccm.getWorkloadItems() track by item.label">
+                                        <div class="card h-100 shadow-sm border-0 rounded-4 bg-gradient" ng-class="{
+                                        'bg-info-subtle': item.label === '累计中介拜访数',
+                                        'bg-warning-subtle': item.label === '累计群活动次数',
+                                        'bg-primary-subtle': item.label === '累计新中介数',
+                                        'bg-purple-subtle': item.label === '累计跟进客户数'
+                                    }" style="transition: transform 0.3s;">
+                                            <div
+                                                class="card-body text-center d-flex flex-column justify-content-center">
+                                                <div class="mb-2" style="font-size: 1.8rem;" ng-class="{
+                                        'text-info': item.label === '累计中介拜访数',
+                                        'text-warning': item.label === '累计群活动次数',
+                                        'text-primary': item.label === '累计新中介数',
+                                        'text-purple': item.label === '累计跟进客户数'
+                                    }">
+                                                    <i class="fas" ng-class="{
+                                        'fa-handshake': item.label === '累计中介拜访数',
+                                        'fa-users': item.label === '累计群活动次数',
+                                        'fa-user-plus': item.label === '累计新中介数',
+                                        'fa-binoculars': item.label === '累计跟进客户数'
+                                    }"></i>
+                                                </div>
+                                                <h6 class="card-title fw-bold text-muted mb-2">{{ item.label }}</h6>
+                                                <p class="card-text display-6">{{ item.value }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 工作成果指标 -->
+                            <div class="col-12">
+                                <h4 class="fw-bold text-success mb-3 border-bottom pb-2">
+                                    <i class="fas fa-trophy me-2"></i>工作成果指标
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-2 mb-4"
+                                        ng-repeat="item in ccm.getResultItems() track by item.label">
+                                        <div style="cursor: pointer"
+                                            class="card h-100 shadow-sm border-0 rounded-4 bg-gradient" ng-class="{
+                                                'bg-success-subtle': item.label === '累计成交客户数',
+                                                'bg-danger-subtle': item.label === '累计成交工位数',
+                                                'bg-orange-subtle': item.label === '累计新客户数',
+                                                'bg-secondary-subtle': item.label === '累计询盘数'
+                                            }" style="transition: transform 0.3s;" ng-click="ccm.handleCardClick(item)">
+                                            <div
+                                                class="card-body text-center d-flex flex-column justify-content-center">
+                                                <div class="mb-2" style="font-size: 1.8rem;" ng-class="{
+                                                'text-success': item.label === '累计成交客户数',
+                                                'text-danger': item.label === '累计成交工位数',
+                                                'text-orange': item.label === '累计新客户数',
+                                                'text-secondary': item.label === '累计询盘数'
+                                            }">
+                                                    <i class="fas" ng-class="{
+                                                'fa-hand-holding-usd': item.label === '累计成交客户数',
+                                                'fa-building': item.label === '累计成交工位数',
+                                                'fa-user-check': item.label === '累计新客户数',
+                                                'fa-comments': item.label === '累计询盘数'
+                                            }"></i>
+                                                </div>
+                                                <h6 class="card-title fw-bold text-muted mb-2">{{ item.label }}</h6>
+                                                <p class="card-text display-6">{{ item.value }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-danger" ng-if="ccm.errorMessage">{{ ccm.errorMessage }}</div>
+                        <!-- 汇总文字报告区 -->
+                        <div class="mt-4" ng-if="ccm.generatedReportText">
+                            <h5 class="fw-bold text-dark">文字报告：</h5>
+                            <pre class="border rounded p-3 bg-light"
+                                style="white-space: pre-wrap;">{{ ccm.generatedReportText }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 新建日报页 -->
+            <div class="tab-pane fade" id="newReport">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">新建日报</div>
+                    <div class="card-body">
+                        <form ng-submit="ccm.submitReport()" novalidate>
+                            <div class="row g-4">
+                                <!-- 动态渲染字段 -->
+                                <div class="col-md-3" ng-repeat="field in ccm.reportFields" ng-show="!field.hidden">
+                                    <label class="form-label">{{ field.label }}</label>
+
+                                    <!-- 数字类型 -->
+                                    <input ng-if="field.type === 'number'" type="number" class="form-control"
+                                        ng-model="ccm.newReport[field.model]" min="0" ng-required="field.required"
+                                        ng-disabled="field.disabled" placeholder="{{field.placeholder}}">
+
+                                    <!-- 日期类型 -->
+                                    <input ng-if="field.type === 'date'" type="date" class="form-control"
+                                        ng-model="ccm.newReport[field.model]" ng-required="field.required"
+                                        placeholder="{{field.placeholder}}">
+
+                                    <!-- 多行文本 -->
+                                    <textarea ng-if="field.type === 'textarea'" class="form-control" rows="3"
+                                        ng-model="ccm.newReport[field.model]"
+                                        placeholder="{{field.placeholder}}"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-12 text-end">
+                                    <button type="reset" class="btn btn-secondary me-2">重置</button>
+                                    <button type="submit" class="btn btn-primary">提交报告</button>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+            <!-- 历史报告列表 -->
+            <div class="tab-pane fade" id="history">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">历史报告列表</div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">开始日期</label>
+                                <input type="date" class="form-control" ng-model="ccm.query.startDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">结束日期</label>
+                                <input type="date" class="form-control" ng-model="ccm.query.endDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">ID</label>
+                                <input type="text" class="form-control" ng-model="ccm.query.sales_channel_id"
+                                    placeholder="不输入则查询所有ID的数据">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-outline-success w-100" ng-click="ccm.searchReports()">查询</button>
+                            </div>
+                        </div>
+                        <!-- 在表格中新增操作列，给每条数据生成文字报告 -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>招商人员</th>
+                                        <th>日期</th>
+                                        <th>询盘</th>
+                                        <th>中介拜访</th>
+                                        <th>拜访详情</th>
+                                        <th>群活动</th>
+                                        <th>活动详情</th>
+                                        <th>新客户</th>
+                                        <th>成交客户</th>
+                                        <th>成交工位</th>
+                                        <th>新中介</th>
+                                        <th>社交媒体发布</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat-start="report in ccm.reports">
+                                        <td>{{report.sales_channel_name}}</td>
+                                        <td>{{report.report_date | date:'yyyy-MM-dd'}}</td>
+                                        <td>{{report.inquiries}}次</td>
+                                        <td>{{report.agency_visits}}次</td>
+                                        <td>{{report.describe_of_visits}}</td>
+                                        <td>{{report.groups_activities}}次</td>
+                                        <td>{{report.describe_of_groups_activities}}</td>
+                                        <td>{{report.new_customers}}台</td>
+                                        <td>{{report.done_customers}}台</td>
+                                        <td>{{report.done_workstations}}个</td>
+                                        <td>{{report.new_agencies}}人</td>
+                                        <td>
+                                            <span class="badge bg-danger">小红书: {{report.XHS}}</span>
+                                            <span class="badge bg-secondary">抖音: {{report.DY}}</span>
+                                            <span class="badge bg-warning">大众点评: {{report.DZDP}}</span>
+                                            <span class="badge bg-success">视频号: {{report.SPH}}</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                ng-click="ccm.toggleReportText(report)">
+                                                {{ report.showTextReport ? '隐藏报告' : '文本报告' }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="report.showTextReport" ng-repeat-end>
+                                        <td colspan="13">
+                                            <div class="alert alert-info" role="alert"
+                                                style="white-space: pre-wrap; text-align:left;">
+                                                {{ report.textReport }}
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                ng-click="ccm.copy_report(report)">一键复制</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- 日报分页 -->
+                        <nav class="d-flex justify-content-between">
+                            <span class="text-muted">共 {{ccm.totalItems}} 条记录</span>
+                            <ul class="pagination">
+                                <li class="page-item" ng-class="{disabled: ccm.currentPage===1}">
+                                    <a class="page-link" ng-click="ccm.prevPage()">&laquo; 上一页</a>
+                                </li>
+                                <li class="page-item" ng-repeat="n in ccm.pageRange track by n"
+                                    ng-class="{active: n===ccm.currentPage}">
+                                    <a class="page-link" ng-click="ccm.gotoPage(n)">{{n}}</a>
+                                </li>
+                                <li class="page-item" ng-class="{disabled: ccm.currentPage===ccm.totalPages}">
+                                    <a class="page-link" ng-click="ccm.nextPage()">下一页 &raquo;</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <!-- 客户列表页 -->
+            <div class="tab-pane fade" id="customerList">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">客户档案列表</div>
+                    <div class="card-body">
+                        <form class="row g-3 align-items-center">
+                            <!-- 用户ID -->
+                            <div class="col-md-2">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="salesChannelId"
+                                        ng-model="ccm.salesChannelId_c" placeholder="请输入用户ID">
+                                    <label for="salesChannelId">用户ID</label>
+                                </div>
+                            </div>
+
+                            <!-- 客户状态 -->
+                            <div class="col-md-2">
+                                <div class="form-floating">
+                                    <select class="form-select" id="customerStatus" ng-model="ccm.customerStatus_c"
+                                        ng-change="ccm.resetCustomerStatus()">
+                                        <option value="">请选择状态</option>
+                                        <option value="0">跟进中</option>
+                                        <option value="1">已成交</option>
+                                        <option value="2">已流失</option>
+                                    </select>
+                                    <label for="customerStatus">客户状态</label>
+                                </div>
+                            </div>
+                            <!-- 开始日期 -->
+                            <div class="col-md-2">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="startDate" ng-model="ccm.startDate_c">
+                                    <label for="startDate">开始日期</label>
+                                </div>
+                            </div>
+                            <!-- 结束日期 -->
+                            <div class="col-md-2">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="endDate" ng-model="ccm.endDate_c">
+                                    <label for="endDate">结束日期</label>
+                                </div>
+                            </div>
+                            <!-- 查询按钮 -->
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary w-100" ng-click="ccm.fetchClients()">
+                                    <i class="fas fa-search me-2"></i>查询
+                                </button>
+                            </div>
+                        </form>
+                        <!-- 客户信息表格 -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>客户名称</th>
+                                        <th>到访日期</th>
+                                        <th>到访项目</th>
+                                        <th>参观单元</th>
+                                        <th>客户来源</th>
+                                        <th>客户状态</th>
+                                        <th>预算</th>
+                                        <th>使用原因</th>
+                                        <th>空间功能</th>
+                                        <th>选址进度</th>
+                                        <th>对比盘情况</th>
+                                        <th>负责人</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat-start="customer in ccm.customers">
+                                        <td class="text-ellipsis">{{customer.customer_name}}</td>
+                                        <td>{{customer.created_at | date:'yyyy-MM-dd' : 'UTC'}}</td>
+                                        <td class="text-ellipsis">{{customer.project_name}}</td>
+                                        <td class="text-ellipsis">{{customer.visit_unit}}</td>
+                                        <td class="text-ellipsis">{{customer.customer_source}}</td>
+                                        <td>
+                                            <span ng-switch="customer.customer_status">
+                                                <span ng-switch-when="0" class="badge bg-warning">跟进中</span>
+                                                <span ng-switch-when="1" class="badge bg-success">已成交</span>
+                                                <span ng-switch-when="2" class="badge bg-danger">已流失</span>
+                                                <span ng-switch-default class="badge bg-secondary">未知状态</span>
+                                            </span>
+                                        </td>
+                                        <td>{{customer.budget}} 元</td>
+                                        <td class="text-ellipsis">{{customer.move_status}}</td>
+                                        <td class="text-ellipsis">{{customer.space_feature}}</td>
+                                        <td class="text-ellipsis">{{customer.site_selection_progress}}</td>
+                                        <td class="text-ellipsis">{{customer.comparison_info}}</td>
+                                        <td>{{customer.sales_channel_name}}</td>
+                                        <td>
+                                            <div class="btn-group" role="group" aria-label="Actions">
+                                                <button class="btn btn-sm btn-outline-primary me-2"
+                                                    ng-click="ccm.toggleCustomerReportText(customer)">
+                                                    {{ customer.showTextReport ? '隐藏报告' : '文本报告' }}
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-info me-2"
+                                                    ng-click="ccm.viewCustomerDetails(customer)">
+                                                    查看详情
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary"
+                                                    ng-click="ccm.addFollowingInfo(customer)">
+                                                    +添加跟进记录
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr ng-if="customer.showTextReport" ng-repeat-end>
+                                        <td colspan="13">
+                                            <div class="alert alert-info" style="white-space: pre-wrap;">
+                                                {{ customer.textReport }}
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                ng-click="ccm.copy_client_report(customer)">一键复制</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- 客户分页 -->
+                        <nav class="d-flex justify-content-between">
+                            <span class="text-muted">共 {{ccm.totalItems_c}} 条记录</span>
+                            <ul class="pagination">
+                                <li class="page-item" ng-class="{disabled: ccm.currentPage_c === 1}">
+                                    <a class="page-link" ng-click="ccm.prevPage_c()">&laquo; 上一页</a>
+                                </li>
+                                <li class="page-item" ng-repeat="n in ccm.pageRange_c track by n"
+                                    ng-class="{active: n === ccm.currentPage_c}">
+                                    <a class="page-link" ng-click="ccm.gotoPage_c(n)">{{n}}</a>
+                                </li>
+                                <li class="page-item" ng-class="{disabled: ccm.currentPage_c === ccm.totalPages_c}">
+                                    <a class="page-link" ng-click="ccm.nextPage_c()">下一页 &raquo;</a>
+                                </li>
+                            </ul>
+                        </nav>
+                        <!-- 客户详情模态框 -->
+                        <div class="modal fade" id="customerDetailsModal" tabindex="-1"
+                            aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="customerDetailsModalLabel">客户详情</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <strong>客户名称:</strong>
+                                                <span>{{ccm.selectedCustomer.customer_name}}</span>
+                                            </div>
+                                            <!-- 项目名称 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>到访项目:</strong>
+                                                <span>{{ccm.selectedCustomer.project_name}}</span>
+                                            </div>
+                                            <!-- 参观单元 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>参观单元:</strong>
+                                                <span>{{ccm.selectedCustomer.visit_unit}}</span>
+                                            </div>
+                                            <!-- 客户来源 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>客户来源:</strong>
+                                                <span>{{ccm.selectedCustomer.customer_source}}</span>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <strong>客户状态:</strong>
+                                                <span ng-switch="ccm.selectedCustomer.customer_status">
+                                                    <span ng-switch-when="0" class="badge bg-warning">跟进中</span>
+                                                    <span ng-switch-when="1" class="badge bg-success">已成交</span>
+                                                    <span ng-switch-when="2" class="badge bg-danger">已流失</span>
+                                                    <span ng-switch-default class="badge bg-secondary">未知状态</span>
+                                                </span>
+                                            </div>
+                                            <!-- 公司情况 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>公司情况:</strong>
+                                                <span>{{ccm.selectedCustomer.company_info}}</span>
+                                            </div>
+                                            <!-- 预算 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>预算:</strong> <span>{{ccm.selectedCustomer.budget}}元</span>
+                                            </div>
+                                            <!-- 使用原因 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>使用原因:</strong>
+                                                <span>{{ccm.selectedCustomer.move_status}}</span>
+                                            </div>
+                                            <!-- 空间功能 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>空间功能:</strong>
+                                                <span>{{ccm.selectedCustomer.space_feature}}</span>
+                                            </div>
+                                            <!-- 家具需求 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>家具需求:</strong>
+                                                <span>{{ccm.selectedCustomer.furniture_requirement}}</span>
+                                            </div>
+                                            <!-- 特殊需求 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>特殊需求:</strong>
+                                                <span>{{ccm.selectedCustomer.special_requirement}}</span>
+                                            </div>
+                                            <!-- 选址进度 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>选址进度:</strong>
+                                                <span>{{ccm.selectedCustomer.site_selection_progress}}</span>
+                                            </div>
+                                            <!-- 对比盘情况 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>对比盘情况:</strong>
+                                                <span>{{ccm.selectedCustomer.comparison_info}}</span>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <strong>对会议室配套及服务配套的评估:</strong>
+                                                <span>{{ccm.selectedCustomer.meeting_room_assessment}}</span>
+                                            </div>
+                                            <!-- 现场情况反馈 (单独一行) -->
+                                            <div class="col-12 mb-3">
+                                                <strong>现场情况反馈:</strong>
+                                                <div class="customer-feedback"
+                                                    style="max-height: 200px; overflow-y: auto;">
+                                                    <span>{{ccm.selectedCustomer.on_site_feedback}}</span>
+                                                </div>
+                                            </div>
+                                            <!-- 下一步行动 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>下一步行动:</strong>
+                                                <span>{{ccm.selectedCustomer.next_action_content}}</span>
+                                            </div>
+                                            <!-- 执行时间 -->
+                                            <div class="col-md-6 mb-3">
+                                                <strong>执行时间:</strong>
+                                                <span>{{ccm.selectedCustomer.next_action_time |
+                                                    date:'yyyy-MM-dd'}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">关闭</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 添加跟进记录模态框 -->
+                        <div class="modal fade" id="addFollowingInfoModal" tabindex="-1"
+                            aria-labelledby="addFollowingInfoModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="addFollowingInfoModalLabel">新增跟进记录</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form name="followUpForm" ng-submit="ccm.saveForm()" novalidate>
+                                            <div class="row g-3">
+                                                <!-- 客户名称 -->
+                                                <div class="col-md-6">
+                                                    <label><strong>客户名称:</strong></label>
+                                                    <div class="form-control-plaintext bg-light rounded">
+                                                        {{ccm.selectedCustomer.customer_name}}</div>
+                                                </div>
+                                                <!-- 获客时间 -->
+                                                <div class="col-md-6">
+                                                    <label><strong>获客时间:</strong></label>
+                                                    <div class="form-control-plaintext bg-light rounded">
+                                                        {{ccm.selectedCustomer.created_at | date:'yyyy-MM-dd'}}</div>
+                                                </div>
+                                                <!-- 项目名称 -->
+                                                <div class="col-md-6">
+                                                    <label><strong>到访项目:</strong></label>
+                                                    <div class="form-control-plaintext bg-light rounded">
+                                                        {{ccm.selectedCustomer.project_name}}</div>
+                                                </div>
+                                                <!-- 参观单位 -->
+                                                <div class="col-md-6">
+                                                    <label><strong>参观单位:</strong></label>
+                                                    <div class="form-control-plaintext bg-light rounded">
+                                                        {{ccm.selectedCustomer.visit_unit}}</div>
+                                                </div>
+                                                <!-- 客户状态（修改状态） -->
+                                                <div class="col-md-6">
+                                                    <label><strong>客户状态:</strong></label>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-outline-primary btn-sm dropdown-toggle"
+                                                            type="button" id="customerStatusDropdown"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <span ng-switch="ccm.selectedCustomer.customer_status">
+                                                                <span ng-switch-when="0"
+                                                                    class="badge bg-warning">跟进中</span>
+                                                                <span ng-switch-when="1"
+                                                                    class="badge bg-success">已成交</span>
+                                                                <span ng-switch-when="2"
+                                                                    class="badge bg-danger">已流失</span>
+                                                            </span>
+                                                        </button>
+                                                        <ul class="dropdown-menu"
+                                                            aria-labelledby="customerStatusDropdown">
+                                                            <li><a class="dropdown-item"
+                                                                    ng-click="ccm.changeCustomerStatus(0)"><span
+                                                                        class="badge bg-warning">跟进中</span></a></li>
+                                                            <li><a class="dropdown-item"
+                                                                    ng-click="ccm.changeCustomerStatus(1)"><span
+                                                                        class="badge bg-success">已成交</span></a></li>
+                                                            <li><a class="dropdown-item"
+                                                                    ng-click="ccm.changeCustomerStatus(2)"><span
+                                                                        class="badge bg-danger">已流失</span></a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <!-- 现场情况反馈 -->
+                                                <div class="col-12">
+                                                    <label><strong>首次现场情况反馈:</strong></label>
+                                                    <div class="form-control-plaintext bg-light rounded"
+                                                        style="max-height: 200px; overflow-y: auto;">
+                                                        <span>{{ccm.selectedCustomer.on_site_feedback}}</span>
+                                                    </div>
+                                                </div>
+                                                <!-- 跟进记录展示 -->
+                                                <div class="col-12">
+                                                    <div ng-if="ccm.followUpRecords && ccm.followUpRecords.length > 0">
+                                                        <ul class="list-group">
+                                                            <li class="list-group-item"
+                                                                ng-repeat="record in ccm.followUpRecords">
+                                                                <div
+                                                                    class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <small
+                                                                            class="text-muted">跟进人：{{record.sales_channel_name}}</small>
+                                                                    </div>
+                                                                    <small class="text-muted">{{record.follow_up_date |
+                                                                        date:'yyyy-MM-dd HH:mm'}}</small>
+                                                                </div>
+                                                                <p> <small
+                                                                        class="text-muted">跟进内容：</small>{{record.follow_up_content}}
+                                                                </p>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <div ng-if="!ccm.followUpRecords || ccm.followUpRecords.length === 0">
+                                                        <p class="text-muted">暂无跟进记录</p>
+                                                    </div>
+                                                </div>
+                                                <!-- 客户已成交但未有成交报告时 -->
+                                                <div class="row g-3" style="font-size: 0.875rem;"
+                                                    ng-if="ccm.selectedCustomer.customer_status === 1 && !ccm.selectedCustomer.deal_report_id">
+                                                    <h5 class="mt-3 mb-3 text-primary text-center">新增成交报告</h5>
+                                                    <!-- 成交项目 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>成交项目:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.deal_project" placeholder="项目名称"
+                                                            required>
+                                                    </div>
+                                                    <!-- 成交单元 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>成交单元:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.deal_unit" placeholder="请填入成交单元/区域"
+                                                            required>
+                                                    </div>
+                                                    <!-- 成交工位数 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>成交工位数:</strong></label>
+                                                        <input type="number" class="form-control"
+                                                            ng-model="ccm.dealReport.deal_workstations"
+                                                            placeholder="请填入数值" required>
+                                                    </div>
+                                                    <!-- 客户来源 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>客户来源:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.client_source" placeholder="平台名称/中介"
+                                                            required>
+                                                    </div>
+                                                    <!-- 签约日期 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>签约日期:</strong></label>
+                                                        <input type="date" class="form-control"
+                                                            ng-model="ccm.dealReport.sign_date" required>
+                                                    </div>
+                                                    <!-- 签约公司 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>签约公司:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.sign_company" placeholder="请填入签约主体"
+                                                            required>
+                                                    </div>
+
+                                                    <!-- 客户对接人 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>客户对接人:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.client_contact"
+                                                            placeholder="请填入对接人名称" required>
+                                                    </div>
+                                                    <!-- 对接人职务 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>对接人职务:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.client_contact_position"
+                                                            placeholder="请填入对接人职务" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label><strong>对接人电话:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.client_contact_phone"
+                                                            placeholder="请填入对接人电话" required>
+                                                    </div>
+
+                                                    <!-- 支付方式 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>支付方式:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.payment_method"
+                                                            placeholder="银行转账/微信支付/支付宝支付..." required>
+                                                    </div>
+                                                    <!-- 交付日期 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>交付日期:</strong></label>
+                                                        <input type="date" class="form-control"
+                                                            ng-model="ccm.dealReport.delivery_date" required>
+                                                    </div>
+                                                    <!-- 合同时长 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>合同时长（月）：</strong></label>
+                                                        <input type="number" class="form-control"
+                                                            ng-model="ccm.dealReport.contract_duration"
+                                                            placeholder="请填入金额数值" required>
+                                                    </div>
+                                                    <!-- 签约金额 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>签约金额:</strong></label>
+                                                        <input type="number" class="form-control"
+                                                            ng-model="ccm.dealReport.signed_amount" placeholder="请填入数值"
+                                                            required>
+                                                    </div>
+                                                    <!-- 押金 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>押金:</strong></label>
+                                                        <input type="number" class="form-control"
+                                                            ng-model="ccm.dealReport.deposit" placeholder="请填入金额数值"
+                                                            required>
+                                                    </div>
+                                                    <!-- 交付标准 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>交付标准:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.delivery_standard" required>
+                                                    </div>
+                                                    <!-- 优惠条件 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>优惠条件:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.discount_conditions">
+                                                    </div>
+                                                    <!-- 备注 -->
+                                                    <div class="col-md-6">
+                                                        <label><strong>备注:</strong></label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.dealReport.remarks">
+                                                    </div>
+                                                </div><br>
+                                                <!-- 已有成交报告时，显示该报告内容 -->
+                                                <div ng-if="ccm.selectedCustomer.customer_status === 1 && ccm.selectedCustomer.deal_report_id"
+                                                    class="col-12">
+                                                    <h5 class="mt-3 mb-3 text-primary text-center">该客户的成交报告</h5>
+                                                    <table class="table table-bordered table-sm"
+                                                        style="font-size: 0.875rem;">
+                                                        <tbody>
+                                                            <tr>
+                                                                <td><strong>成交项目：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.deal_project}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>成交单元：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.deal_unit}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>成交工位数：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.deal_workstations}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>客户来源：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.client_source}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>签约日期：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.sign_date |
+                                                                    date:'yyyy-MM-dd'}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>签约公司：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.sign_company}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>客户对接人：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.client_contact}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>对接人职务：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.client_contact_position}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>招商对接人：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.sales_channel_name}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>支付方式：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.payment_method}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>交付日期：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.delivery_date
+                                                                    | date:'yyyy-MM-dd'}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>合同时长（月）：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.contract_duration}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>签约金额：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.signed_amount}} 元
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>押金：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.deposit}} 元</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>交付标准：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.delivery_standard}}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>优惠条件：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.discount_conditions
+                                                                    || '无'}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>备注：</strong></td>
+                                                                <td>{{ccm.selectedCustomer.deal_report.remarks
+                                                                    || '无'}}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <!-- 跟进信息新增 -->
+                                                <div class="col-12 mb-3"
+                                                    ng-if="ccm.selectedCustomer.customer_status === 0">
+                                                    <label><strong>新增跟进记录：</strong></label>
+                                                    <textarea class="form-control" ng-model="ccm.followUp.details"
+                                                        rows="4" placeholder="请输入跟进详情" required></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <!-- 提交按钮 -->
+                                                <button
+                                                    ng-if="ccm.selectedCustomer.customer_status === 1 && !ccm.selectedCustomer.deal_report_id||ccm.selectedCustomer.customer_status === 0"
+                                                    type="submit" class="btn btn-primary"
+                                                    ng-disabled="followUpForm.$invalid">提交</button>
+                                                <!-- 关闭按钮 -->
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">关闭</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 新建客户档案页 -->
+            <div class="tab-pane fade" id="newCustomer" ng-class="{'show active': ccm.defaultTab === 'newCustomer'}">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-white">新建客户档案</div>
+                    <div class="card-body">
+                        <form name="newCustomerForm" novalidate ng-submit="ccm.submitNewCustomer()">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">客户名称</label>
+                                    <input type="text" class="form-control" ng-model="ccm.newCustomer.customer_name"
+                                        required placeholder="请输入客户公司名/来访者名称">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">到访项目</label>
+                                    <input type="text" class="form-control" ng-model="ccm.newCustomer.project_name"
+                                        required placeholder="请输入到访项目">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">参观单元</label>
+                                    <input type="text" class="form-control" ng-model="ccm.newCustomer.visit_unit"
+                                        required placeholder="请输入参观单元">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">客户来源</label>
+                                    <input type="text" class="form-control" ng-model="ccm.newCustomer.customer_source"
+                                        required placeholder="请输入客户来源">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">公司情况</label>
+                                    <textarea class="form-control" rows="2" ng-model="ccm.newCustomer.company_info"
+                                        placeholder="请输入客户公司/行业/情况"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">预算</label>
+                                    <input type="number" class="form-control" ng-model="ccm.newCustomer.budget"
+                                        placeholder="请输入客户预算">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">使用原因</label>
+                                    <textarea class="form-control" rows="2" ng-model="ccm.newCustomer.move_status"
+                                        placeholder="请输入客户使用原因"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">空间功能</label>
+                                    <textarea class="form-control" rows="2" ng-model="ccm.newCustomer.space_feature"
+                                        placeholder="请输入客户对单元空间需求"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">家具需求</label>
+                                    <textarea class="form-control" rows="2"
+                                        ng-model="ccm.newCustomer.furniture_requirement"
+                                        placeholder="请输入客户家具空间需求"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">特殊需求</label>
+                                    <textarea class="form-control" rows="2"
+                                        ng-model="ccm.newCustomer.special_requirement"
+                                        placeholder="请输入客户的特殊需求"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">选址进度</label>
+                                    <input type="text" class="form-control"
+                                        ng-model="ccm.newCustomer.site_selection_progress" placeholder="了解/海选/锁定等...">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">对比盘情况</label>
+                                    <textarea class="form-control" rows="2" ng-model="ccm.newCustomer.comparison_info"
+                                        placeholder="请输入客户选址对比盘的情况"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">会议室配套及服务评估</label>
+                                    <textarea class="form-control" rows="2"
+                                        ng-model="ccm.newCustomer.meeting_room_assessment"
+                                        placeholder="请输入客户对会议室配套及服务评估"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">现场情况反馈</label>
+                                    <textarea class="form-control" rows="3" ng-model="ccm.newCustomer.on_site_feedback"
+                                        placeholder="请输入现场参观的情况反馈"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">下一步行动</label>
+                                    <textarea class="form-control" rows="2"
+                                        ng-model="ccm.newCustomer.next_action_content" placeholder="下一步计划"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">预计执行时间</label>
+                                    <input type="datetime-local" class="form-control"
+                                        ng-model="ccm.newCustomer.next_action_time" min="{{ ccm.minDateTime }}">
+                                </div>
+                                <div class="col-md-4" ng-show="false">
+                                    <label class="form-label">用户ID</label>
+                                    <input type="number" class="form-control" ng-model="ccm.newCustomer.sales_channel_id"
+                                        disabled>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12 text-end">
+                                    <button type="reset" class="btn btn-secondary me-2">重置</button>
+                                    <button type="submit" class="btn btn-warning">保存档案</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- 社交媒体页：变量重命名整理，避免冲突 -->
+            <div class="tab-pane fade" id="socialMedia" ng-class="{'show active': ccm.defaultTab === 'socialMedia'}">
+                <div class="container-fluid py-4">
+                    <div class="row g-4">
+                        <!-- 左侧：汇总 & 列表 -->
+                        <div class="col-lg-8">
+                            <!-- 汇总统计卡片 -->
+                            <div class="card mb-4 shadow-sm" ng-if="ccm.summaryData">
+                                <div class="card-header bg-info text-white">
+                                    <i class="bi bi-bar-chart-line-fill me-2"></i>汇总统计
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-4" ng-repeat="(key, value) in ccm.summaryData">
+                                            <div class="p-3 bg-light rounded text-center">
+                                                <div class="h5 mb-1">{{ value }}</div>
+                                                <div>
+                                                    {{ (ccm.fieldMap[key] && ccm.fieldMap[key].label) || key }}
+                                                    <small>({{ (ccm.fieldMap[key] && ccm.fieldMap[key].unit) || ''
+                                                        }})</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 数据列表卡片 -->
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-secondary text-white">
+                                    <i class="bi bi-table me-2"></i>报表列表
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped align-middle mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>月份</th>
+                                                <th>平台</th>
+                                                <th>项目</th>
+                                                <th>账号</th>
+                                                <th ng-repeat="fld in ccm.fields">{{ fld.label }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="item in ccm.reportList">
+                                                <td>{{ item.month }}</td>
+                                                <td>{{ item.platform }}</td>
+                                                <td>{{ item.project_code }}</td>
+                                                <td>{{ item.account_name }}</td>
+                                                <td ng-repeat="fld in ccm.fields">{{ item.fields[fld.field_key] || 0 }}
+                                                </td>
+                                            </tr>
+                                            <tr ng-if="!ccm.reportList.length">
+                                                <td colspan="{{ 4 + ccm.fields.length }}"
+                                                    class="text-center text-muted py-4">
+                                                    暂无数据
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <nav class="mt-3" ng-if="ccm.pagination.totalPages >= 1">
+                                        <ul class="pagination justify-content-center mb-0">
+                                            <li class="page-item" ng-class="{ disabled: ccm.pagination.page === 1 }">
+                                                <a class="page-link" href=""
+                                                    ng-click="ccm.changePage(ccm.pagination.page - 1)">«</a>
+                                            </li>
+                                            <li class="page-item"
+                                                ng-repeat="n in [].constructor(ccm.pagination.totalPages) track by $index"
+                                                ng-class="{ active: ccm.pagination.page === ($index + 1) }">
+                                                <a class="page-link" href="" ng-click="ccm.changePage($index + 1)">{{
+                                                    $index + 1 }}</a>
+                                            </li>
+                                            <li class="page-item"
+                                                ng-class="{ disabled: ccm.pagination.page === ccm.pagination.totalPages }">
+                                                <a class="page-link" href=""
+                                                    ng-click="ccm.changePage(ccm.pagination.page + 1)">»</a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 右侧：筛选 & 录入 & 字段配置 -->
+                        <div class="col-lg-4">
+                            <!-- 筛选面板 -->
+                            <div class="card mb-4 shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="bi bi-funnel-fill me-2"></i>筛选条件
+                                </div>
+                                <div class="card-body">
+                                    <form name="reportFilterForm" novalidate>
+                                        <div class="mb-3">
+                                            <label class="form-label">月份</label>
+                                            <input type="month" class="form-control" ng-model="ccm.filters.report.month"
+                                                month-input>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">平台</label>
+                                            <select class="form-select" ng-model="ccm.filters.report.platform">
+                                                <option value="">全平台</option>
+                                                <option ng-repeat="p in ccm.platforms" value="{{ p }}">{{ p }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">项目</label>
+                                            <input type="text" class="form-control"
+                                                ng-model="ccm.filters.report.project_code" placeholder="项目代号">
+                                        </div>
+                                        <button type="button" class="btn btn-primary w-100"
+                                            ng-click="ccm.loadSocialReports()">
+                                            查询数据
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <!-- 录入面板 -->
+                            <div class="card mb-4 shadow-sm">
+                                <div
+                                    class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-pencil-square me-2"></i>新增记录</span>
+                                    <button class="btn btn-sm btn-light text-success" data-bs-toggle="modal"
+                                        data-bs-target="#fieldConfigModal">
+                                        <i class="fa-solid fa-gear"></i> 字段配置
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <form name="entryForm" novalidate ng-submit="ccm.submitRecord()">
+                                        <div class="mb-3">
+                                            <label class="form-label">月份</label>
+                                            <input type="month" class="form-control" ng-model="ccm.newRecord.month"
+                                                required month-input>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">平台</label>
+                                            <select class="form-select" ng-model="ccm.newRecord.platform" required>
+                                                <option value="" disabled selected>请选择平台</option>
+                                                <option ng-repeat="p in ccm.platforms" value="{{ p }}">{{ p }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">项目</label>
+                                            <input type="text" class="form-control" ng-model="ccm.newRecord.project_code"
+                                                required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">账号</label>
+                                            <input type="text" class="form-control" ng-model="ccm.newRecord.account_name"
+                                                required>
+                                        </div>
+                                        <fieldset class="mb-3">
+                                            <legend class="col-form-label">统计字段</legend>
+                                            <div class="row g-3">
+                                                <div class="col-md-6" ng-repeat="fld in ccm.fields">
+                                                    <label class="form-label">{{ fld.label }} <small
+                                                            class="text-muted">({{ fld.unit }})</small></label>
+                                                    <input type="number" class="form-control" min="0"
+                                                        ng-model="ccm.newRecord.fields[fld.field_key]" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </fieldset>
+                                        <button type="submit" class="btn btn-success w-100"
+                                            ng-disabled="entryForm.$invalid">
+                                            提交 <i class="bi bi-send-fill ms-1"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <!-- 字段配置模态框 -->
+                            <div class="modal fade" id="fieldConfigModal" tabindex="-1"
+                                aria-labelledby="fieldConfigModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h5 class="modal-title" id="fieldConfigModalLabel"><i
+                                                    class="bi bi-gear-fill me-2"></i>字段配置管理</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="关闭"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3"><strong>已有字段：</strong></div>
+                                            <ul class="list-group mb-4">
+                                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                                    ng-repeat="fld in ccm.fields">
+                                                    <span><strong>{{ fld.field_key }}</strong> - {{ fld.label }} <small
+                                                            class="text-muted">({{ fld.unit }})</small></span>
+                                                    <button class="btn btn-sm btn-outline-danger"
+                                                        ng-click="ccm.softDeleteField(fld.field_key)">删除</button>
+                                                </li>
+                                            </ul>
+                                            <form name="fieldForm" novalidate ng-submit="ccm.createField()">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">字段 Key</label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.newField.field_key" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">显示 Label</label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.newField.label" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">单位</label>
+                                                        <input type="text" class="form-control"
+                                                            ng-model="ccm.newField.unit">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">排序</label>
+                                                        <input type="number" class="form-control"
+                                                            ng-model="ccm.newField.sort_order" value="0">
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <button type="submit" class="btn btn-warning w-100"
+                                                        ng-disabled="fieldForm.$invalid">添加字段 <i
+                                                            class="bi bi-plus-circle ms-1"></i></button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

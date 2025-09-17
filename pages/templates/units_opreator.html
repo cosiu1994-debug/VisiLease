@@ -1,0 +1,1240 @@
+<div ng-controller="UnitOpreatorController as um" class="container-fluid">
+  <div class="row flex-grow-1">
+    <!-- 侧边栏 -->
+    <nav class="col-md-3 col-lg-2 bg-primary text-white sidebar p-4 rounded shadow">
+      <ul class="nav flex-column">
+        <!-- 项目管理 -->
+        <li class="nav-item mb-3">
+          <a href="" class="nav-link text-white" ng-click="um.activeSection='buildings'">
+            <i class="fas fa-city me-2"></i>项目管理
+          </a>
+          <!-- 子项：项目列表 -->
+          <ul class="nav flex-column ms-3 mt-1" ng-if="um.activeSection === 'buildings'">
+            <li class="nav-item" ng-repeat="building in um.buildings">
+              <a href="" class="nav-link text-white" ng-click="um.selectBuilding(building)"
+                ng-class="{'fw-bold': um.selectedBuilding.id === building.id}">
+                {{ building.name }}
+              </a>
+            </li>
+          </ul>
+        </li>
+        <!-- 楼层管理 -->
+        <li class="nav-item mb-3">
+          <a href="" class="nav-link text-white" ng-click="um.selectedBuilding && (um.activeSection='floors')"
+            ng-class="{disabled:!um.selectedBuilding}">
+            <i class="fas fa-layer-group me-2"></i>楼层管理
+          </a>
+          <!-- 子项：楼层列表 -->
+          <ul class="nav flex-column ms-3 mt-1" ng-if="um.activeSection === 'floors' && um.selectedBuilding">
+            <li class="nav-item" ng-repeat="floor in um.floors">
+              <a href="" class="nav-link text-white" ng-click="um.selectFloor(floor)"
+                ng-class="{'fw-bold': um.selectedFloor === floor}">
+                {{ floor.level }}层
+              </a>
+            </li>
+          </ul>
+        </li>
+        <!-- 单元管理 -->
+        <li class="nav-item">
+          <a href="" class="nav-link text-white" ng-click="um.selectedFloor && (um.activeSection='units')"
+            ng-class="{disabled:!um.selectedFloor}">
+            <i class="fas fa-chart-pie me-2"></i>单元管理
+            <span ng-if="um.selectedFloor" class="text-light ms-2">（{{ um.selectedFloor.level }}层）</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <!-- 主内容区 -->
+    <main class="col-md-9 col-lg-10 ps-4">
+      <section ng-show="um.activeSection==='buildings'" class="mb-4">
+        <!-- 总览看板 -->
+        <div class="card shadow-sm rounded-3 mb-4 border-0">
+          <!-- Header -->
+          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-chart-bar me-2"></i>全局数据汇总</span>
+            <div>
+              <button class="btn btn-light btn-sm me-2" ng-click="um.exportStats()">
+                <i class="fas fa-file-export me-1"></i>导出到Excel
+              </button>
+              <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#buildingModal">
+                <i class="fas fa-plus me-1"></i>新增项目
+              </button>
+            </div>
+          </div>
+          <!-- 全局汇总卡片 -->
+          <div class="card-body">
+            <div class="row text-center g-2">
+              <div class="col-6 col-md-2" ng-repeat="metric in [
+              {
+                label: '全局总面积',
+                value: ((+um.total.leased_area || 0) + (+um.total.vacant_area || 0))
+                  .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ㎡',
+                icon: 'fa-vector-square',
+                color: 'text-info'
+              },
+                {label: '全局总套数', value: ((+um.total.leased_units || 0) + (+um.total.vacant_units || 0)) + ' 套', icon: 'fa-building', color: 'text-info'},
+                {
+                  label: '全局已出租面积',
+                  value: (um.total.leased_area || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ㎡',
+                  icon: 'fa-store',
+                  color: 'text-success'
+                } ,
+                {label: '全局已出租套数', value: um.total.leased_units + ' 套', icon: 'fa-door-closed', color: 'text-success'},
+                {
+                  label: '全局空置面积',
+                  value: ((+um.total.vacant_area) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ㎡',
+                  icon: 'fa-warehouse',
+                  color: 'text-warning'
+                }
+                ,
+                {label: '全局空置套数', value: um.total.vacant_units + ' 套', icon: 'fa-door-open', color: 'text-warning'},
+                {label: '全局出租率', value: (um.total.lease_rate && !isNaN(+um.total.lease_rate) ? (+um.total.lease_rate * 100).toFixed(2) : '0.00') + '%', icon: 'fa-chart-pie', color: 'text-primary fw-bold'}
+              ] track by $index">
+                <div class="bg-light rounded h-100 p-3 shadow-sm">
+                  <div class="mb-1">
+                    <i class="fas {{metric.icon}} {{metric.color}}"></i>
+                  </div>
+                  <div class="small text-muted">{{metric.label}}</div>
+                  <div class="fs-6 {{metric.color}}">{{metric.value}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 楼栋卡片列表 -->
+        <div>
+          <div class="fw-bold text-primary mb-3 fs-5">项目列表</div>
+          <div class="row">
+            <div class="col-12 col-md-6 col-lg-4 mb-3" ng-repeat="b in um.stats track by b.id"
+              ng-init="b.showPriceType = b.showPriceType || 'rent'">
+              <div class="card h-100 shadow-sm rounded-3 border-0 position-relative">
+                <div class="form-check position-absolute m-2" style="top: 0; left: 0; z-index: 10;">
+                  <input class="form-check-input" type="checkbox" ng-model="um.selectedBuildingsMap[b.id]"
+                    ng-change="um.toggleBuildingSelection(b.id)">
+                </div>
+                <!-- 项目名称 -->
+                <div class="card-header bg-light fw-semibold text-primary ps-5">
+                  {{ b.name }}
+                </div>
+                <!-- 主体内容 -->
+                <div class="card-body">
+                  <!-- 地址 -->
+                  <div class="mb-3 text-muted small">
+                    <i class="fas fa-location-dot me-1"></i>{{ b.address }}
+                  </div>
+                  <!-- 数据指标 -->
+                  <div class="row text-center g-2 mb-3">
+                    <div class="col-6 col-md-4" ng-repeat="metric in [
+                      {
+                        label: '总面积',
+                        value: ((+b.leased_area || 0) + (+b.vacant_area || 0) + (+b.reserved_area || 0)).toLocaleString() + ' ㎡',
+                        icon: 'fa-ruler-combined',
+                        color: 'text-dark fw-bold'
+                      },
+                      {
+                        label: '已出租面积',
+                        value: (+b.leased_area || 0).toLocaleString() + ' ㎡',
+                        icon: 'fa-store',
+                        color: 'text-success'
+                      },
+                      {
+                        label: '已出租套数',
+                        value: b.leased_units + ' 套',
+                        icon: 'fa-door-closed',
+                        color: 'text-success'
+                      },
+                      {
+                        label: '空置面积',
+                        value: (+b.vacant_area || 0).toLocaleString() + ' ㎡',
+                        icon: 'fa-warehouse',
+                        color: 'text-warning'
+                      },
+                      {
+                        label: '空置套数',
+                        value: b.vacant_units + ' 套',
+                        icon: 'fa-door-open',
+                        color: 'text-warning'
+                      },
+                      {
+                        label: '出租率',
+                        value: (b.lease_rate && !isNaN(+b.lease_rate) ? (+b.lease_rate * 100).toFixed(2) : '0.00') + '%',
+                        icon: 'fa-chart-pie',
+                        color: 'text-primary fw-bold'
+                      },
+                      {
+                        label: '已出租租金（暂时基于预设单价计算）（' + (b.showPriceType === 'rent' ? '不含管理费' : '含管理费') + '）',
+                        value: '￥' + (
+                          (b.showPriceType === 'rent'
+                            ? (b.total_rent_price && +b.total_rent_price.leasedTotal || 0)
+                            : (b.total_price_with_mgmt && +b.total_price_with_mgmt.leasedTotal || 0)
+                          ) / 10000
+                        ).toFixed(2) + ' 万',
+                        icon: 'fa-sack-dollar',
+                        color: 'text-success fw-bold',
+                        clickable: true
+                      },
+                      {
+                        label: '空置租金潜力（' + (b.showPriceType === 'rent' ? '不含管理费' : '含管理费') + '）',
+                        value: '￥' + (
+                          (b.showPriceType === 'rent'
+                            ? (b.total_rent_price && +b.total_rent_price.vacantTotal || 0)
+                            : (b.total_price_with_mgmt && +b.total_price_with_mgmt.vacantTotal || 0)
+                          ) / 10000
+                        ).toFixed(2) + ' 万',
+                        icon: 'fa-hand-holding-dollar',
+                        color: 'text-warning fw-bold',
+                        clickable: true
+                      }
+                    ] track by $index">
+                      <div class="bg-light rounded p-2 h-100"
+                        ng-click="metric.clickable && (b.showPriceType = (b.showPriceType === 'rent' ? 'mgmt' : 'rent'))"
+                        ng-style="{'cursor': metric.clickable ? 'pointer' : 'default'}">
+                        <div class="mb-1">
+                          <i class="fas {{metric.icon}} {{metric.color}}"></i>
+                        </div>
+                        <div class="small text-muted">{{metric.label}}</div>
+                        <div class="fs-6 {{metric.color}}">{{metric.value}}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 查看按钮 -->
+                  <div class="text-end mt-2">
+                    <button class="btn btn-sm btn-outline-info" ng-click="um.selectBuilding(b)">
+                      <i class="fas fa-eye me-1"></i>查看
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 空数据提示 -->
+            <div class="col-12" ng-if="um.stats.length === 0">
+              <div class="alert alert-warning text-center py-4 rounded shadow-sm">
+                <i class="fas fa-building-circle-xmark fa-2x mb-2 text-muted"></i>
+                <div class="fw-semibold text-muted">暂无项目信息</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav aria-label="楼栋卡片分页导航" class="mt-4">
+          <ul class="pagination justify-content-center">
+            <!-- 上一页 -->
+            <li class="page-item" ng-class="{ disabled: um.cardPage === 1 }">
+              <a class="page-link" href="" ng-click="um.cardchangePage(um.cardPage - 1)" aria-label="上一页">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <!-- 中间页码 -->
+            <li class="page-item" ng-repeat="p in um.getCardPageRange()" ng-class="{ active: um.cardPage === p }">
+              <a class="page-link" href="" ng-click="um.cardchangePage(p)">
+                {{ p }}
+              </a>
+            </li>
+            <!-- 下一页 -->
+            <li class="page-item" ng-class="{ disabled: um.cardPage === um.cardTotalPages }">
+              <a class="page-link" href="" ng-click="um.cardchangePage(um.cardPage + 1)" aria-label="下一页">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </section>
+      <section ng-show="um.activeSection==='floors'" class="mb-4">
+        <div class="card shadow-sm rounded">
+          <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">楼层列表 - {{um.selectedBuilding.name}}</h6>
+            <div>
+              <button class="btn btn-light btn-sm me-2" ng-click="um.exportFloors()">
+                <i class="fas fa-file-export me-1"></i>导出到Excel
+              </button>
+              <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#floorModal">
+                <i class="fas fa-plus me-1"></i>新增楼层
+              </button>
+            </div>
+          </div>
+          <!-- 项目（当前楼栋）租赁汇总 -->
+          <div class="card-body border-bottom bg-white" ng-if="um.projectTotal">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0">
+                <i class="fa-solid fa-chart-pie me-2 text-primary"></i>此项目出租情况
+              </h6>
+              <div class="text-muted small">更新于 {{ um.projectTotal.updated_at || '刚刚' }}</div>
+            </div>
+
+            <div class="row g-3 text-center">
+              <!-- 租赁数据项 -->
+              <div class="col-6 col-sm-4 col-md-2" ng-repeat="metric in [
+                {icon: 'fa-building-circle-check', label: '已出租面积', value: um.projectTotal.leased_area + ' ㎡', color: 'text-success'},
+                {icon: 'fa-door-open', label: '已出租套数', value: um.projectTotal.leased_units + ' 套', color: 'text-success'},
+                {icon: 'fa-building-circle-xmark', label: '空置面积', value: um.projectTotal.vacant_area + ' ㎡', color: 'text-warning'},
+                {icon: 'fa-door-closed', label: '空置套数', value: um.projectTotal.vacant_units + ' 套', color: 'text-warning'},
+                {icon: 'fa-percent', label: '出租率', value: (um.projectTotal.lease_rate * 100).toFixed(2) + '%', color: 'text-primary fw-bold'}
+              ] track by $index">
+                <div class="card shadow-sm h-100 border-0">
+                  <div class="card-body p-3">
+                    <div class="text-muted small d-flex align-items-center justify-content-center mb-1">
+                      <i class="fa-solid {{metric.icon}} me-2 {{metric.color}}"></i>
+                      <span>{{metric.label}}</span>
+                    </div>
+                    <div class="fs-5 {{metric.color}}">{{metric.value}}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-bordered mb-0 align-middle text-center">
+                <thead class="table-dark">
+                  <tr>
+                    <th>层号</th>
+                    <th>套内面积(㎡)</th>
+                    <th>已出租套数</th>
+                    <th>已出租面积(㎡)</th>
+                    <th>空置套数</th>
+                    <th>空置面积(㎡)</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="f in um.floors">
+                    <td>{{f.level}}F</td>
+                    <td>{{ (+f.usable_area || 0).toLocaleString(undefined, { minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 }) }}</td>
+                    <td>{{f.leased_units}}</td>
+                    <td>{{ (+f.lease_area || 0).toLocaleString(undefined, { minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 }) }}</td>
+                    <td>{{f.vacant_units}}</td>
+                    <td>{{ (+f.vacant_area || 0).toLocaleString(undefined, { minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 }) }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-info" ng-click="um.selectFloor(f)">
+                        <i class="fas fa-eye me-1"></i>查看
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section ng-show="um.activeSection==='units'" class="mb-4">
+        <div class="card shadow-sm rounded">
+          <div class="card-header bg-info text-white">
+            <!-- 顶部 -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+              <h6 class="mb-2 mb-sm-0">
+                <i class="fa-solid fa-layer-group me-2"></i>
+                单元管理 - {{um.selectedBuilding.name}} - {{um.selectedFloor.level}}F
+              </h6>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-light btn-sm" ng-click="um.exportUnits()">
+                  <i class="fas fa-file-export me-1"></i>导出单元列表
+                </button>
+                <button class="btn btn-outline-light btn-sm" ng-click="um.isCanvasVisible = !um.isCanvasVisible"
+                  data-bs-toggle="collapse" data-bs-target="#canvasWrapper" aria-expanded="{{um.isCanvasVisible}}"
+                  aria-controls="canvasWrapper">
+                  <i class="fa-solid fa-vector-square me-1"></i>
+                  {{ um.isCanvasVisible ? '收起示意图' : '展开示意图' }}
+                </button>
+              </div>
+            </div>
+            <!-- 第二行：筛选 + 进度条 + 数值 -->
+            <div class="row mt-3 align-items-center g-2">
+              <!-- 状态筛选 -->
+              <div class="col-auto">
+                <div class="position-relative custom-select-icon">
+                  <select class="form-select form-select-sm ps-5 pe-5" ng-model="um.filter.status"
+                    ng-change="um.loadUnits()">
+                    <option value="">全部状态</option>
+                    <option value="vacant">空置</option>
+                    <option value="leased">已出租</option>
+                    <option value="reserved">已预定</option>
+                    <option value="unpartitioned">未分割</option>
+                  </select>
+                  <i class="fa-solid fa-filter position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"></i>
+                  <i
+                    class="fa-solid fa-chevron-down position-absolute top-50 end-0 translate-middle-y me-2 text-muted"></i>
+                </div>
+              </div>
+
+              <!-- 进度条 -->
+              <div class="col">
+                <div class="progress" style="height:16px; cursor: pointer;" data-bs-toggle="modal"
+                  data-bs-target="#floorStatsModal" ng-click="um.loadFloorStats(um.selectedFloor)">
+                  <div class="progress-bar bg-success text-dark" role="progressbar"
+                    style="width:{{ ((um.selectedFloor.usable_area - um.selectedFloor.remaining_usable_area) / um.selectedFloor.usable_area * 100).toFixed(2) }}%">
+                    {{ ((um.selectedFloor.usable_area - um.selectedFloor.remaining_usable_area) /
+                    um.selectedFloor.usable_area * 100).toFixed(2) }}%
+                  </div>
+                  <div class="progress-bar bg-secondary text-white" role="progressbar"
+                    style="width:{{ (um.selectedFloor.remaining_usable_area / um.selectedFloor.usable_area * 100).toFixed(2) }}%">
+                    {{ (um.selectedFloor.remaining_usable_area / um.selectedFloor.usable_area * 100).toFixed(2) }}%
+                  </div>
+                </div>
+              </div>
+              <!-- 数值说明 -->
+              <div class="col-auto text-end small lh-sm">
+                <div>
+                  <span class="text-white-50">已分配：</span>
+                  <strong>{{ (um.selectedFloor.usable_area - um.selectedFloor.remaining_usable_area).toFixed(2)
+                    }}㎡</strong>
+                </div>
+                <div>
+                  <span class="text-white-50">可用：</span>
+                  <strong>{{ um.selectedFloor.remaining_usable_area.toFixed(2) }}㎡</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-bordered mb-0 align-middle text-center">
+                <thead class="table-dark">
+                  <tr>
+                    <th scope="col" style="width: 5%">✔</th>
+                    <th scope="col">单元编号</th>
+                    <th scope="col">单元状态</th>
+                    <th scope="col">租赁面积<br><small>(㎡)</small></th>
+                    <th scope="col">建筑面积<br><small>(㎡)</small></th>
+                    <th scope="col">套内面积<br><small>(㎡)</small></th>
+                    <th scope="col">实用率<br><small>(%)</small></th>
+                    <th scope="col" style="width: 15%">最新合同</th>
+                    <th scope="col">空置<br><small>天数</small></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="u in um.units" ng-click="u.status !== 'unpartitioned' && um.selectUnit(u)"
+                    ng-class="{'table-secondary text-muted fst-italic': u.status === 'unpartitioned'}"
+                    ng-style="u.status === 'unpartitioned' ? {'cursor': 'not-allowed'} : {'cursor': 'pointer'}"
+                    title="{{ u.status === 'unpartitioned' ? '该单元待分割，无法编辑' : '' }}">
+                    <td>
+                      <input type="checkbox" ng-model="u.selected" ng-disabled="u.status === 'unpartitioned'"
+                        ng-click="$event.stopPropagation()" ng-change="um.onUnitToggle(u)" />
+                    </td>
+                    <td class="text-start">{{ u.code }}</td>
+                    <td>
+                      <span class="badge bg-{{ u.status | unitStatusColor }}">
+                        {{ u.status | unitStatusLabel }}
+                      </span>
+                    </td>
+                    <td>{{ u.lease_area | number:2 }}</td>
+                    <td>{{ u.build_area | number:2 }}</td>
+                    <td>{{ u.usable_area | number:2 }}</td>
+                    <td>{{ (u.efficiency_rate * 100) | number:1 }}%</td>
+                    <td>
+                      <span ng-if="!u.contracts || u.contracts.length === 0">-</span>
+                      <span ng-if="u.contracts && u.contracts.length > 0">
+                        <a href="" ng-click="$event.stopPropagation(); um.viewContract(u.contracts[0].id)">
+                          {{ u.contracts[0].number }}
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-1"
+                          ng-if="u.contracts.length > 1"
+                          ng-click="$event.stopPropagation(); um.viewContractTimeline(u)">
+                          历史
+                        </button>
+                      </span>
+                    </td>
+                    <td>{{ u.total_vacant_days }}</td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                  <tr>
+                    <td colspan="3" class="text-end">合计：</td>
+                    <td>{{ um.getTotal('lease_area') | number:2 }}</td>
+                    <td>{{ um.getTotal('build_area') | number:2 }}</td>
+                    <td>{{ um.getTotal('usable_area') | number:2 }}</td>
+                    <td>{{ um.getGlobalEfficiencyPercent() | number:1 }}-</td>
+                    <td>-</td>
+                    <td>-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center w-100">
+            <!-- 居中的分页按钮容器 -->
+            <nav aria-label="分页导航" class="mx-auto mx-sm-0">
+              <ul class="pagination pagination-sm mb-2 mb-sm-0 justify-content-center">
+                <!-- 上一页 -->
+                <li class="page-item" ng-class="{ disabled: um.filter.page === 1 }">
+                  <a class="page-link" href="" ng-click="um.filter.page > 1 && um.changePage(um.filter.page - 1)"
+                    aria-label="上一页">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+                <!-- 中间页码 -->
+                <li class="page-item" ng-repeat="p in [].constructor(um.pagination.totalPages) track by $index"
+                  ng-class="{ active: um.filter.page === ($index + 1) }">
+                  <a class="page-link" href="" ng-click="um.changePage($index + 1)">
+                    {{ $index + 1 }}
+                  </a>
+                </li>
+                <!-- 下一页 -->
+                <li class="page-item" ng-class="{ disabled: um.filter.page === um.pagination.totalPages }">
+                  <a class="page-link" href=""
+                    ng-click="um.filter.page < um.pagination.totalPages && um.changePage(um.filter.page + 1)"
+                    aria-label="下一页">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+            <!-- 每页条数选择控件，靠右显示 -->
+            <div class="mt-2 mt-sm-0">
+              <label class="me-2">本页最大:</label>
+              <select class="form-select form-select-sm d-inline-block w-auto" ng-model="um.filter.pageSize"
+                ng-change="um.onPageSizeChange()">
+                <option ng-value="10">10 条</option>
+                <option ng-value="20">20 条</option>
+                <option ng-value="50">50 条</option>
+              </select>
+              <small class="text-muted">
+                本页 {{ um.units.length }} 条
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="collapse" id="canvasWrapper" ng-class="{show: um.isCanvasVisible}">
+            <!-- 画布容器，控制宽高比 -->
+            <div class="card" style="aspect-ratio: 2 / 1; box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);">
+              <!-- 工具栏 -->
+              <div class="card-header d-flex align-items-center gap-2" style="background-color: #f0f2f5;">
+                <div class="btn-group" role="group">
+                  <button class="btn"
+                    ng-class="{'btn-primary': um.currentMode === 'draw', 'btn-outline-primary': um.currentMode !== 'draw', 'active': um.currentMode === 'draw'}"
+                    ng-click="um.setMode('draw')"
+                    style="width: 70px; padding-left: 0.8rem; padding-right: 0.8rem; display: flex; justify-content: center; align-items: center;"
+                    title="绘图模式">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                  <button class="btn"
+                    ng-class="{'btn-primary': um.currentMode === 'select', 'btn-outline-primary': um.currentMode !== 'select', 'active': um.currentMode === 'select'}"
+                    ng-click="um.setMode('select')"
+                    style="width: 70px; padding-left: 0.8rem; padding-right: 0.8rem; display: flex; justify-content: center; align-items: center;"
+                    title="选择模式">
+                    <i class="fas fa-mouse-pointer"></i>
+                  </button>
+                  <button class="btn"
+                    ng-class="{'btn-primary': um.currentMode === 'cut', 'btn-outline-primary': um.currentMode !== 'cut', 'active': um.currentMode === 'cut'}"
+                    ng-click="um.setMode('cut')"
+                    style="width: 70px; padding-left: 0.8rem; padding-right: 0.8rem; display: flex; justify-content: center; align-items: center;"
+                    title="切割模式">
+                    <i class="fas fa-cut"></i>
+                  </button>
+                  <button class="btn btn-secondary"
+                    style="width: 70px; padding-left: 0.8rem; padding-right: 0.8rem; display: flex; justify-content: center; align-items: center;"
+                    ng-click="um.clearDrawings()"><i class="fas fa-eraser" title="橡皮擦"></i></button>
+                </div>
+                <div class="d-flex align-items-center gap-2 ratio-controller small text-nowrap">
+                  <label class="me-1">画布比(w:h)</label>
+                  <input type="number" step="0.1" min="0.1" class="form-control form-control-sm" style="width: 60px;"
+                    ng-model="um.ratioForm.aspect_ratio" ng-change="um.updateAspectRatios()" />
+
+                  <label class="ms-2 me-1">核心比(w:h)</label>
+                  <input type="number" step="0.1" min="0.1" class="form-control form-control-sm" style="width: 60px;"
+                    ng-model="um.ratioForm.core_ratio" ng-change="um.updateAspectRatios()" />
+                </div>
+                <div class="legend d-flex align-items-center ml-3">
+                  <div class="legend-item d-flex align-items-center mr-3">
+                    <span class="legend-color"
+                      style="display:inline-block;width:12px;height:12px;background:rgba(173, 223, 191, 0.8);border:1px solid #333;margin-right:4px;"></span>
+                    <span class="legend-label">空置</span>
+                  </div>
+                  <div class="legend-item d-flex align-items-center mr-3">
+                    <span class="legend-color"
+                      style="display:inline-block;width:12px;height:12px;background:rgba(178, 190, 206, 0.8);border:1px solid #333;margin-right:4px;"></span>
+                    <span class="legend-label">已出租</span>
+                  </div>
+                  <div class="legend-item d-flex align-items-center">
+                    <span class="legend-color"
+                      style="display:inline-block;width:12px;height:12px;background:rgba(250, 214, 165, 0.8);border:1px solid #333;margin-right:4px;"></span>
+                    <span class="legend-label">已预定</span>
+                  </div>
+                </div>
+                <!-- 可放置缩放控件或其他工具 -->
+                <div id="zoomIndicator" class="ms-auto d-flex align-items-center gap-1" style="width: 90px;">
+                  <input type="text" ng-model="um.zoomPercent" ng-change="um.onZoomChange()" min="10" max="500"
+                    class="form-control form-control-sm text-end"
+                    style="background: transparent; border: none; color: #333; padding: 0;" />
+                  <span>%</span>
+                </div>
+              </div>
+
+              <!-- 画布主体 -->
+              <div id="canvasWrapper" style="width: 100%; height: 600px; overflow: auto; border: 1px solid #ccc;">
+                <canvas id="unitCanvas" style="display: block;"></canvas>
+              </div>
+              <!-- 模式提示 Toast 容器（固定在右下角） -->
+              <div class="toast-container position-fixed bottom-0 end-0 p-3" id="modeToastContainer">
+                <div id="modeToast" class="toast align-items-center text-white bg-primary border-0" role="alert"
+                  aria-live="assertive" aria-atomic="true">
+                  <div class="d-flex">
+                    <div class="toast-body" id="modeToastBody">
+                      当前模式：绘图模式
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                      aria-label="关闭"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 说明文字 -->
+            <div class="card-footer text-muted small d-flex align-items-center gap-1" style="font-style: italic;">
+              <i class="fas fa-info-circle"></i>
+              本模型仅用于展示单元的大致坐落与几何关系示意，具体以实地测量和权属文件为准。
+            </div>
+            <!-- 悬浮合并按钮（右下角，仅在选中两个或以上时显示） -->
+            <div class="position-fixed bottom-0 end-0 m-4 z-3"
+              ng-show="(um.units | filter:{selected:true}).length >= 2">
+              <button class="btn btn-primary btn-lg shadow" ng-click="um.openMergeModal()">
+                合并已选（{{ (um.units | filter:{selected:true}).length }}）
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <!-- 单元属性 -->
+  <div class="modal fade" id="unitDetailModal" tabindex="-1" aria-labelledby="unitDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">单元详情：{{um.selectedUnit.code}}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <!-- 查看模式 -->
+          <table class="table table-bordered" ng-if="!um.editMode">
+            <tr>
+              <th>单元状态</th>
+              <td>{{um.selectedUnit.status | unitStatusLabel}}</td>
+            </tr>
+            <tr>
+              <th>租赁面积</th>
+              <td>{{um.selectedUnit.lease_area}} ㎡</td>
+            </tr>
+            <tr>
+              <th>建筑面积</th>
+              <td>{{um.selectedUnit.build_area}} ㎡</td>
+            </tr>
+            <tr>
+              <th>套内面积</th>
+              <td>{{um.selectedUnit.usable_area}} ㎡</td>
+            </tr>
+            <tr>
+              <th>实用率</th>
+              <td>{{um.selectedUnit.efficiency_rate * 100 | number:1}}%</td>
+            </tr>
+            <tr>
+              <th>租金单价</th>
+              <td>{{um.selectedUnit.rent_unit_price || '—'}}元/㎡/月</td>
+            </tr>
+            <tr>
+              <th>管理费</th>
+              <td>{{um.selectedUnit.management_fee_per_sqm || '—'}}元/㎡/月</td>
+            </tr>
+            <tr>
+              <th>朝向</th>
+              <td>{{um.selectedUnit.orientation || '—'}}</td>
+            </tr>
+            <tr>
+              <th>格局</th>
+              <td>{{um.selectedUnit.layout || '—'}}</td>
+            </tr>
+            <tr>
+              <th>特点</th>
+              <td>{{um.selectedUnit.features || '—'}}</td>
+            </tr>
+            <tr>
+              <th>备注</th>
+              <td>{{um.selectedUnit.remarks || '—'}}</td>
+            </tr>
+            <tr>
+              <th>本单元已空置</th>
+              <td>{{um.selectedUnit.total_vacant_days || '—'}} 天</td>
+            </tr>
+          </table>
+          <!-- 编辑模式 -->
+          <form ng-if="um.editMode">
+            <table class="table table-bordered">
+              <tr>
+                <th>单元状态</th>
+                <td>
+                  <select class="form-select" ng-model="um.selectedUnit.status"
+                    ng-options="status as (status | unitStatusLabel) for status in um.statusList track by status">
+                  </select>
+
+                </td>
+              </tr>
+              <tr>
+                <th>租赁面积（㎡）</th>
+                <td><input type="number" class="form-control" step="0.01" ng-model="um.selectedUnit.lease_area"></td>
+              </tr>
+              <tr>
+                <th>建筑面积（㎡）</th>
+                <td><input type="number" class="form-control" step="0.01" ng-model="um.selectedUnit.build_area"
+                    disabled></td>
+              </tr>
+              <tr>
+                <th>套内面积（㎡）</th>
+                <td><input type="number" class="form-control" step="0.01" ng-model="um.selectedUnit.usable_area"
+                    disabled></td>
+              </tr>
+              <tr>
+                <th>租金单价（元 / ㎡·月）</th>
+                <td><input type="number" class="form-control" step="0.01" ng-model="um.selectedUnit.rent_unit_price">
+                </td>
+              </tr>
+              <tr>
+                <th>管理费（元 / ㎡·月）</th>
+                <td><input type="number" class="form-control" step="0.01"
+                    ng-model="um.selectedUnit.management_fee_per_sqm"></td>
+              </tr>
+              <tr>
+                <th>朝向</th>
+                <td><input type="text" class="form-control" ng-model="um.selectedUnit.orientation"></td>
+              </tr>
+              <tr>
+                <th>特点</th>
+                <td><textarea class="form-control" ng-model="um.selectedUnit.features"></textarea></td>
+              </tr>
+              <tr>
+                <th>备注</th>
+                <td><textarea class="form-control" ng-model="um.selectedUnit.remarks"></textarea></td>
+              </tr>
+            </table>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" ng-click="um.toggleEdit()" ng-if="!um.editMode">编辑</button>
+          <button type="button" class="btn btn-success" ng-click="um.saveUnitNewAttr()" ng-if="um.editMode"><i
+              class="fas fa-check me-1"></i>确认</button>
+          <button type="button" class="btn btn-secondary" ng-click="um.toggleEdit()" ng-if="um.editMode">取消</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 新增项目 Modal -->
+  <div class="modal fade" id="buildingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">新增项目</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label">名称</label><input class="form-control"
+              ng-model="um.newBuilding.name"></div>
+          <div class="mb-3"><label class="form-label">所在国家</label><input class="form-control"
+              ng-model="um.newBuilding.contury"></div>
+          <div class="mb-3"><label class="form-label">城市</label><input class="form-control"
+              ng-model="um.newBuilding.city"></div>
+          <div class="mb-3"><label class="form-label">区域</label><input class="form-control"
+              ng-model="um.newBuilding.district"></div>
+          <div class="mb-3"><label class="form-label">详细地址</label><input class="form-control"
+              ng-model="um.newBuilding.address"></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary"
+            data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" ng-click="um.addBuilding()"
+            data-bs-dismiss="modal">保存</button></div>
+      </div>
+    </div>
+  </div>
+  <!-- 新增楼层 Modal -->
+  <div class="modal fade" id="floorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">新增楼层</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label">层号</label><input type="number" class="form-control"
+              ng-model="um.newFloor.level" placeholder="请输入层号"></div>
+          <div class="mb-3"><label class="form-label">建筑面积</label><input type="number" class="form-control"
+              ng-model="um.newFloor.build_area" placeholder="请输入建筑面积（支持保留两位小数）"></div>
+          <div class="mb-3"><label class="form-label">套内面积</label><input type="number" class="form-control"
+              ng-model="um.newFloor.usable_area" placeholder="请输入套内面积（支持保留两位小数）"></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary"
+            data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" ng-click="um.addFloor()"
+            data-bs-dismiss="modal">保存</button></div>
+      </div>
+    </div>
+  </div>
+  <!-- 新增单元属性 Modal (分割)-->
+  <div class="modal fade" id="unitAttrModal" tabindex="-1" aria-labelledby="unitAttrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="unitAttrModalLabel">正在新增单元</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <!-- 基础信息 -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">单元编号</label>
+              <input type="text" class="form-control" ng-model="um.newUnit.code" placeholder="请输入单元编号" />
+            </div>
+          </div>
+
+          <hr />
+
+          <!-- 面积与租金 -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">租赁面积（㎡）</label>
+              <input type="number" class="form-control" ng-model="um.newUnit.lease_area" placeholder="请输入租赁面积" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">套内面积（㎡）</label>
+              <input type="number" class="form-control" ng-model="um.newUnit.usable_area" step="0.0001"
+                placeholder="请输入套内面积（支持保留两位小数）" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">租金单价（元/㎡·月）</label>
+              <input type="number" class="form-control" ng-model="um.newUnit.rent_price" step="0.01"
+                placeholder="请输入租金单价" />
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">管理费单价（元/㎡·月）</label>
+              <input type="number" class="form-control" ng-model="um.newUnit.management_fee" step="0.01"
+                placeholder="请输入管理费单价" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">格局</label>
+              <input type="text" class="form-control" ng-model="um.newUnit.layout" placeholder="请描述单元格局" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">朝向</label>
+              <input type="text" class="form-control" ng-model="um.newUnit.orientation" placeholder="请输入单元朝向" />
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-12">
+              <label class="form-label fw-bold">单元特点</label>
+              <input type="text" class="form-control" ng-model="um.newUnit.features" placeholder="请输入单元特点" />
+            </div>
+          </div>
+
+          <hr />
+
+          <!-- 备注 -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">备注</label>
+            <textarea class="form-control" ng-model="um.newUnit.notes" rows="3" placeholder="请输入备注内容"></textarea>
+          </div>
+
+          <hr />
+
+          <!-- 计价器 -->
+          <div class="card border-info mb-3">
+            <div class="card-header bg-info text-white fw-bold">计价器</div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                套内面积
+                <span class="fw-bold">{{ um.newUnit.usable_area || 0 }} ㎡</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                实用率
+                <span class="fw-bold">
+                  {{
+                  (um.newUnit.usable_area && um.newUnit.lease_area)
+                  ? ((um.newUnit.usable_area / um.newUnit.lease_area) * 100).toFixed(2)
+                  : 0
+                  }} %
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                租赁面积
+                <span class="fw-bold">{{ um.newUnit.lease_area || 0 }} ㎡</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                租金单价
+                <span class="fw-bold text-muted">{{ um.newUnit.rent_price || 0 }} 元/㎡·月</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                管理费单价
+                <span class="fw-bold text-muted">{{ um.newUnit.management_fee || 0 }} 元/㎡·月</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                月租金总价
+                <span class="fw-bold text-muted">
+                  {{ (um.newUnit.lease_area * um.newUnit.rent_price || 0) | number:2 }} 元
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                月管理费总价
+                <span class="fw-bold text-muted">
+                  {{ (um.newUnit.lease_area * um.newUnit.management_fee || 0) | number:2 }} 元
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                <span class="text-success fw-bold">月总价（租金 + 管理费）</span>
+                <span class="fw-bold text-success">
+                  {{
+                  ((um.newUnit.lease_area * um.newUnit.rent_price) +
+                  (um.newUnit.lease_area * um.newUnit.management_fee)
+                  || 0) | number:2
+                  }} 元
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-footer justify-content-end">
+          <button class="btn btn-primary" data-bs-dismiss="modal" ng-click="um.confirmAddUnit()">确认新增</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 新增单元属性 Modal（合并） -->
+  <div class="modal fade" id="unitMergeAttrModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-object-group me-2"></i>合并单元详情
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- 自动初始化 usable_area -->
+        <div class="modal-body" ng-init="um.calculateMergedUnitAttributes()">
+          <!-- 子单元列表 -->
+          <div class="mb-4">
+            <h6 class="text-secondary mb-3">
+              <i class="fas fa-layer-group me-2"></i>正在合并的单元
+            </h6>
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+              <div class="col" ng-repeat="unit in um.units | filter:{selected:true}">
+                <div class="border rounded p-3 bg-light">
+                  <div><strong>单元编号:</strong> {{unit.code}}</div>
+                  <div><strong>状态:</strong> {{unit.status}}</div>
+                  <div><strong>租赁面积:</strong> {{unit.lease_area}}㎡</div>
+                  <div><strong>套内面积:</strong> {{unit.usable_area}}㎡</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 合并后单元属性 -->
+          <div>
+            <h6 class="text-secondary mb-3">
+              <i class="fas fa-pen-ruler me-2"></i>合并后单元属性
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">合并后单元编号</label>
+                <input class="form-control" ng-model="um.mergedUnit.code" placeholder="请输入单元编号" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">租赁面积（㎡）</label>
+                <input type="number" class="form-control" ng-model="um.mergedUnit.lease_area" step="0.0001"
+                  placeholder="请输入租赁面积" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">租金单价（元/㎡·月）</label>
+                <input type="number" class="form-control" ng-model="um.mergedUnit.rent_price" step="0.01"
+                  placeholder="请输入租金单价（支持保留两位小数）" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">管理费单价（元/㎡·月）</label>
+                <input type="number" class="form-control" ng-model="um.mergedUnit.management_fee" step="0.01"
+                  placeholder="请输入管理费单价（支持保留两位小数）" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">单元特点</label>
+                <input type="text" class="form-control" ng-model="um.mergedUnit.features" placeholder="请输入单元特点" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">朝向</label>
+                <input type="text" class="form-control" ng-model="um.mergedUnit.orientation" placeholder="请输入单元朝向" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">格局</label>
+                <input type="text" class="form-control" ng-model="um.mergedUnit.layout" placeholder="请输入单元格局" />
+              </div>
+              <div class="col-12">
+                <label class="form-label">备注</label>
+                <textarea class="form-control" ng-model="um.mergedUnit.remarks" rows="3"
+                  placeholder="......"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- 计价器 -->
+          <div class="card border-info mt-4">
+            <div class="card-header bg-info text-white fw-bold">计价器</div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                套内面积
+                <span class="fw-bold">{{ um.mergedUnit.usable_area || 0 }} ㎡</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                实用率
+                <span class="fw-bold">
+                  {{
+                  (um.mergedUnit.usable_area && um.mergedUnit.lease_area)
+                  ? ((um.mergedUnit.usable_area / um.mergedUnit.lease_area) * 100).toFixed(2)
+                  : 0
+                  }} %
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                租赁面积
+                <span class="fw-bold">{{ um.mergedUnit.lease_area || 0 }} ㎡</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                租金单价
+                <span class="fw-bold text-muted">{{ um.mergedUnit.rent_price || 0 }} 元/㎡·月</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                管理费单价
+                <span class="fw-bold text-muted">{{ um.mergedUnit.management_fee || 0 }} 元/㎡·月</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                月租金总价
+                <span class="fw-bold text-muted">
+                  {{ (um.mergedUnit.lease_area * um.mergedUnit.rent_price || 0) | number:2 }} 元
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                月管理费总价
+                <span class="fw-bold text-muted">
+                  {{ (um.mergedUnit.lease_area * um.mergedUnit.management_fee || 0) | number:2 }} 元
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                <span class="text-success fw-bold">月总价（租金 + 管理费）</span>
+                <span class="fw-bold text-success">
+                  {{
+                  ((um.mergedUnit.lease_area * um.mergedUnit.rent_price) +
+                  (um.mergedUnit.lease_area * um.mergedUnit.management_fee)
+                  || 0) | number:2
+                  }} 元
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button class="btn btn-primary" data-bs-dismiss="modal" ng-click="um.confirmMerge()">
+            <i class="fas fa-check me-1"></i>确认合并
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 二次分割属性 Modal（支持一开二） -->
+  <div class="modal fade" id="childUnitModal" tabindex="-1" aria-labelledby="childUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <form name="um.childUnitForm" ng-submit="um.saveSubunits()" novalidate>
+        <div class="modal-content">
+          <!-- Modal 头部：显示正在分割的单元信息 -->
+          <div class="modal-header">
+            <h5 class="modal-title" id="childUnitModalLabel">
+              正在分割单元：<strong>{{ um.cutUnit.code }}</strong>
+              （套内面积：{{ um.cutUnit.usable_area }}㎡）
+            </h5>
+          </div>
+          <!-- Modal 主体：两个子单元的输入表单 -->
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6" ng-repeat="child in um.childUnits track by $index">
+                <div class="card mb-3">
+                  <div class="card-header">
+                    <h6 class="mb-0">子单元 {{$index + 1}}</h6>
+                  </div>
+                  <div class="card-body">
+                    <!-- 子单元编号 -->
+                    <div class="mb-2">
+                      <label class="form-label">单元编号</label>
+                      <input type="text" class="form-control" ng-model="child.code" required placeholder="请输入单元编号" />
+                    </div>
+                    <!-- 套内面积 -->
+                    <div class="mb-2">
+                      <label class="form-label">套内面积 (㎡)</label>
+                      <input type="number" step="0.01" class="form-control" ng-model="child.usable_area" required
+                        placeholder="请输入套内面积（支持保留两位小数）" />
+                    </div>
+                    <!-- 租赁面积 -->
+                    <div class="mb-2">
+                      <label class="form-label">租赁面积 (㎡)</label>
+                      <input type="number" step="0.01" class="form-control" ng-model="child.lease_area" required
+                        placeholder="请输入租赁面积" />
+                    </div>
+                    <!-- 租金单价 -->
+                    <div class="mb-2">
+                      <label class="form-label">租金单价 (元/㎡)</label>
+                      <input type="number" step="0.01" class="form-control" ng-model="child.rent_unit_price"
+                        placeholder="请输入租金单价（支持保留两位小数）" />
+                    </div>
+                    <!-- 管理费 -->
+                    <div class="mb-2">
+                      <label class="form-label">管理费 (元/㎡)</label>
+                      <input type="number" step="0.01" class="form-control" ng-model="child.management_fee"
+                        placeholder="请输入管理费单价（支持保留两位小数）" />
+                    </div>
+                    <!-- 朝向 -->
+                    <div class="mb-2">
+                      <label class="form-label">朝向</label>
+                      <input type="text" class="form-control" ng-model="child.orientation" placeholder="请输入单元朝向" />
+                    </div>
+                    <!-- 格局 -->
+                    <div class="mb-2">
+                      <label class="form-label">格局</label>
+                      <input type="text" class="form-control" ng-model="child.layout" placeholder="请输入单元格局" />
+                    </div>
+                    <!-- 备注 -->
+                    <div class="mb-2">
+                      <label class="form-label">备注</label>
+                      <textarea class="form-control" rows="2" ng-model="child.remarks" placeholder="......"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 总计卡片 -->
+          <div class="card border-primary mb-3">
+            <div class="card-header bg-primary text-white fw-bold">计价汇总</div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                套内面积总和
+                <span class="fw-bold">{{ um.getSplitSummary().usable_area | number:2 }} ㎡</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                租赁面积总和
+                <span class="fw-bold">{{ um.getSplitSummary().lease_area | number:2 }} ㎡</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                实用率
+                <span class="fw-bold">{{ um.getSplitSummary().efficiency | number:2 }} %</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                月租金总价
+                <span class="fw-bold text-muted">{{ um.getSplitSummary().rent | number:2 }} 元</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                月管理费总价
+                <span class="fw-bold text-muted">{{ um.getSplitSummary().fee | number:2 }} 元</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                <span class="text-success fw-bold">月总价（租金+管理费）</span>
+                <span class="fw-bold text-success">{{ um.getSplitSummary().total | number:2 }} 元</span>
+              </li>
+            </ul>
+          </div>
+          <!-- Modal 底部按钮 -->
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" ng-disabled="um.childUnitForm.$invalid"><i
+                class="fas fa-check me-1"></i>确认分割</button>
+            <button type="button" class="btn btn-secondary" ng-click="um.cancelSplit()">取消</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- 楼层看板模态框 -->
+  <div class="modal fade" id="floorStatsModal" tabindex="-1" aria-labelledby="floorStatsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content shadow-lg rounded-3">
+        <!-- 头部 -->
+        <div class="modal-header bg-info text-white rounded-top">
+          <h5 class="modal-title" id="floorStatsModalLabel">
+            <i class="fas fa-chart-bar me-2"></i>此楼层出租情况 - {{um.selectedBuilding.name}} - {{um.selectedFloor.level}}F
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <!-- 主体 -->
+        <div class="modal-body">
+          <div class="row g-3 justify-content-center text-center">
+            <div class="col-6 col-sm-4 col-md-2" ng-repeat="metric in [
+            {label: '已出租面积', value: um.selectedFloor.rented_area + ' ㎡', icon: 'fa-store', color: 'text-success'},
+            {label: '已出租套数', value: um.selectedFloor.rented_units + ' 套', icon: 'fa-door-closed', color: 'text-success'},
+            {label: '空置面积', value: um.selectedFloor.vacant_area + ' ㎡', icon: 'fa-warehouse', color: 'text-warning'},
+            {label: '空置套数', value: um.selectedFloor.vacant_units + ' 套', icon: 'fa-door-open', color: 'text-warning'},
+            {label: '出租率', value: um.selectedFloor.occupancy_rate.toFixed(2) + '%', icon: 'fa-chart-pie', color: 'text-primary fw-bold'}
+          ] track by $index">
+              <div class="card border-0 shadow-sm rounded-3 bg-light h-100">
+                <div class="card-body p-3">
+                  <div class="mb-2">
+                    <i class="fas {{metric.icon}} fa-lg {{metric.color}}"></i>
+                  </div>
+                  <div class="small text-muted">{{metric.label}}</div>
+                  <div class="fs-5 {{metric.color}}">{{metric.value}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 尾部 -->
+        <div class="modal-footer border-top-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 合同事件脉络模态框 -->
+  <div class="modal fade" id="contractTimelineModal" tabindex="-1" aria-labelledby="contractTimelineModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-sm">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="contractTimelineModalLabel">
+            签约事件脉络 - 单元 {{ um.currentUnit.code }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <div ng-if="!um.timelineContracts.length" class="text-muted text-center py-5">
+            暂无历史合同
+          </div>
+
+          <ul class="timeline list-unstyled position-relative" ng-if="um.timelineContracts.length">
+            <li ng-repeat="c in um.timelineContracts" class="mb-4 position-relative">
+              <!-- 时间点 -->
+              <div class="timeline-dot position-absolute top-0 start-0 translate-middle rounded-circle"
+                ng-class="{'bg-primary': $first, 'bg-secondary': !$first}" style="width: 14px; height: 14px;"></div>
+              <!-- 合同卡片 -->
+              <div class="ms-5 card shadow-sm border-0">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="fw-bold">合同编号：{{ c.number }}</div>
+                    </div>
+                    <div>
+                      <button class="btn btn-sm btn-outline-primary"
+                        ng-click="$event.stopPropagation(); um.viewContract(c.id)">
+                        查看合同详情
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
